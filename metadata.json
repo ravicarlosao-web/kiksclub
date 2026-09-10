@@ -1,0 +1,6 @@
+{
+  "name": "KicksClub.pt - Sneakers & Streetwear Club",
+  "description": "KicksClub.pt - O teu clube exclusivo de streetwear e sneakers em Portugal. Drops exclusivos Nike, Yeezy, Louis Vuitton, Balenciaga e Jordan com autenticidade garantida e envio expresso.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

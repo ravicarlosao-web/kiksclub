@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --brand-yellow: #FFDD00;
+    --brand-yellow-hover: #FFE838;
+    --brand-dark: #121212;
+    --brand-card-dark: #181818;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #0A0A0A;
+    color: #ffffff;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, .font-condensed {
+    font-family: 'Barlow Condensed', 'Montserrat', sans-serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* Crosshair corner decoration for drop sections */
+.crosshair-corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  opacity: 0.35;
+}
+
+.crosshair-corner::before,
+.crosshair-corner::after {
+  content: '';
+  position: absolute;
+  background-color: #94a3b8;
+}
+
+.crosshair-corner::before {
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 1.5px;
+  transform: translateY(-50%);
+}
+
+.crosshair-corner::after {
+  left: 50%;
+  top: 0;
+  height: 100%;
+  width: 1.5px;
+  transform: translateX(-50%);
+}
+
+/* Yellow glow */
+.yellow-glow {
+  text-shadow: 0 0 20px rgba(255, 221, 0, 0.45);
+}
+
+.box-yellow-glow {
+  box-shadow: 0 0 30px rgba(255, 221, 0, 0.3);
+}
+
+/* Hide scrollbars for smooth carousels */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Marquee continuous animation */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: 200%;
+  animation: marquee 25s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
