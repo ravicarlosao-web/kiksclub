@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getDb } from '../../lib/db.js';
-import { handleOptions, requireAuth, jsonError, rowToProduct } from '../../lib/apiHelpers.js';
+import { getDb } from '../../lib/db';
+import { handleOptions, requireAuth, jsonError, rowToProduct } from '../../lib/apiHelpers';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleOptions(req, res)) return;

@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { uploadImage } from '../../lib/cloudinary.js';
-import { requireAuth, jsonError, handleOptions } from '../../lib/apiHelpers.js';
+import { uploadImage } from '../../lib/cloudinary';
+import { requireAuth, jsonError, handleOptions } from '../../lib/apiHelpers';
 
 export const config = {
   api: {

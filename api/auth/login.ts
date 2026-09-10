@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getDb } from '../../lib/db.js';
-import { signToken, comparePassword, extractToken } from '../../lib/auth.js';
-import { handleOptions, jsonError } from '../../lib/apiHelpers.js';
+import { getDb } from '../../lib/db';
+import { signToken, comparePassword, extractToken } from '../../lib/auth';
+import { handleOptions, jsonError } from '../../lib/apiHelpers';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleOptions(req, res)) return;
