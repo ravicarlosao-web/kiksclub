@@ -5,14 +5,13 @@ import { handleOptions, requireAuth, jsonError, rowToOrder } from '../../lib/api
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleOptions(req, res)) return;
 
-  const db = getDb();
-
   // ── GET /api/orders (admin only) ───────────────────────────────
   if (req.method === 'GET') {
     const admin = requireAuth(req, res);
     if (!admin) return;
 
     try {
+      const db = getDb();
       const { status, limit = '200', offset = '0' } = req.query as Record<string, string>;
 
       let sql = 'SELECT * FROM orders WHERE 1=1';
@@ -38,6 +37,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // ── POST /api/orders (checkout público) ───────────────────────
   if (req.method === 'POST') {
     try {
+      const db = getDb();
       const o = req.body;
 
       // Validação básica

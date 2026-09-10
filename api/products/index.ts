@@ -5,11 +5,10 @@ import { handleOptions, requireAuth, jsonError, rowToProduct } from '../../lib/a
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleOptions(req, res)) return;
 
-  const db = getDb();
-
   // ── GET /api/products ──────────────────────────────────────────
   if (req.method === 'GET') {
     try {
+      const db = getDb();
       const { department, category, search, featured, limit = '100', offset = '0' } = req.query as Record<string, string>;
 
       let sql = 'SELECT * FROM products WHERE 1=1';
@@ -52,6 +51,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!admin) return;
 
     try {
+      const db = getDb();
       const p = req.body;
 
       if (!p.id || !p.name || !p.brand || !p.category || !p.price || !p.image) {

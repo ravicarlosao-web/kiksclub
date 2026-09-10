@@ -5,7 +5,6 @@ import { handleOptions, requireAuth, jsonError, rowToCategory } from '../../lib/
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleOptions(req, res)) return;
 
-  const db = getDb();
   const { id } = req.query as { id: string };
 
   if (!id) return jsonError(res, 400, 'ID em falta');
@@ -16,6 +15,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!admin) return;
 
     try {
+      const db = getDb();
       const c = req.body;
 
       await db.execute({
@@ -51,6 +51,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!admin) return;
 
     try {
+      const db = getDb();
       await db.execute({ sql: 'DELETE FROM categories WHERE id = ?', args: [id] });
       res.status(200).json({ message: 'Categoria eliminada com sucesso' });
     } catch (err) {

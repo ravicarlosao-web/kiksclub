@@ -5,7 +5,6 @@ import { handleOptions, requireAuth, jsonError, rowToOrder } from '../../lib/api
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleOptions(req, res)) return;
 
-  const db = getDb();
   const { id } = req.query as { id: string };
 
   if (!id) return jsonError(res, 400, 'ID em falta');
@@ -13,6 +12,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // ── GET /api/orders/:id (tracking público) ─────────────────────
   if (req.method === 'GET') {
     try {
+      const db = getDb();
       const result = await db.execute({
         sql: `SELECT * FROM orders WHERE
               UPPER(id) = UPPER(?) OR UPPER(tracking_code) = UPPER(?)`,
@@ -52,6 +52,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!admin) return;
 
     try {
+      const db = getDb();
       const { status, trackingCode } = req.body;
 
       const updates: string[] = ["updated_at = datetime('now')"];
@@ -89,6 +90,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!admin) return;
 
     try {
+      const db = getDb();
       await db.execute({ sql: 'DELETE FROM orders WHERE id = ?', args: [id] });
       res.status(200).json({ message: 'Encomenda eliminada com sucesso' });
     } catch (err) {

@@ -16,9 +16,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return jsonError(res, 400, 'Email e password são obrigatórios');
   }
 
-  const db = getDb();
-
   try {
+    const db = getDb();
     // Buscar utilizador admin na BD
     const result = await db.execute({
       sql: 'SELECT * FROM admin_users WHERE LOWER(email) = LOWER(?)',

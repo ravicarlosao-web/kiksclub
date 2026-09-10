@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Sneaker } from '../types';
+import { SNEAKERS } from '../data/sneakers';
 
 const API = '/api/products';
 
@@ -12,22 +13,25 @@ function authHeader() {
 }
 
 export function useProducts() {
-  const [products, setProducts] = useState<Sneaker[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Sneaker[]>(SNEAKERS);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchProducts = useCallback(async () => {
     try {
-      setLoading(true);
       setError(null);
       const res = await fetch(`${API}?limit=500`);
-      if (!res.ok) throw new Error('Erro ao carregar produtos da loja');
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: Erro ao carregar produtos`);
+      }
       const data: Sneaker[] = await res.json();
-      setProducts(data);
+      if (Array.isArray(data) && data.length > 0) {
+        setProducts(data);
+      }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Erro desconhecido';
       setError(msg);
-      console.error('[useProducts]', msg);
+      console.warn('[useProducts] A utilizar catálogo local como fallback:', msg);
     } finally {
       setLoading(false);
     }

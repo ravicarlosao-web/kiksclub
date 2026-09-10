@@ -5,7 +5,6 @@ import { handleOptions, requireAuth, jsonError, rowToProduct } from '../../lib/a
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleOptions(req, res)) return;
 
-  const db = getDb();
   const { id } = req.query as { id: string };
 
   if (!id) return jsonError(res, 400, 'ID em falta');
@@ -13,6 +12,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // ── GET /api/products/:id ──────────────────────────────────────
   if (req.method === 'GET') {
     try {
+      const db = getDb();
       const result = await db.execute({ sql: 'SELECT * FROM products WHERE id = ?', args: [id] });
       if (result.rows.length === 0) return jsonError(res, 404, 'Produto não encontrado');
       res.status(200).json(rowToProduct(result.rows[0] as Record<string, unknown>));
@@ -29,6 +29,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!admin) return;
 
     try {
+      const db = getDb();
       const p = req.body;
 
       await db.execute({
@@ -73,6 +74,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!admin) return;
 
     try {
+      const db = getDb();
       await db.execute({ sql: 'DELETE FROM products WHERE id = ?', args: [id] });
       res.status(200).json({ message: 'Produto eliminado com sucesso' });
     } catch (err) {

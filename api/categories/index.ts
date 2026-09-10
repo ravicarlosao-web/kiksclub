@@ -5,11 +5,10 @@ import { handleOptions, requireAuth, jsonError, rowToCategory } from '../../lib/
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleOptions(req, res)) return;
 
-  const db = getDb();
-
   // ── GET /api/categories ────────────────────────────────────────
   if (req.method === 'GET') {
     try {
+      const db = getDb();
       const { activeOnly } = req.query as { activeOnly?: string };
       let sql = 'SELECT * FROM categories';
       if (activeOnly === 'true') sql += ' WHERE is_active = 1';
@@ -30,6 +29,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!admin) return;
 
     try {
+      const db = getDb();
       const c = req.body;
       if (!c.id || !c.name || !c.slug) {
         return jsonError(res, 400, 'Campos obrigatórios em falta: id, name, slug');

@@ -1,13 +1,14 @@
-import { createClient, type Client } from '@libsql/client';
+import { createClient, type Client } from '@libsql/client/web';
 
 let _client: Client | null = null;
 
 export function getDb(): Client {
   if (!_client) {
-    const url = process.env.TURSO_DATABASE_URL;
-    const authToken = process.env.TURSO_AUTH_TOKEN;
+    const url = (process.env.TURSO_DATABASE_URL || '').trim();
+    const authToken = (process.env.TURSO_AUTH_TOKEN || '').trim();
 
     if (!url || !authToken) {
+      console.error('[DB] Variáveis de ambiente em falta: TURSO_DATABASE_URL ou TURSO_AUTH_TOKEN');
       throw new Error(
         'Variáveis de ambiente em falta: TURSO_DATABASE_URL e TURSO_AUTH_TOKEN são obrigatórias.'
       );
