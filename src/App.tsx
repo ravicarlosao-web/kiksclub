@@ -138,6 +138,42 @@ export default function App() {
     } catch { /* ignore */ }
   }, [adminUser]);
 
+  // ── Listener de Retorno do Stripe Checkout ───────────────────
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const payment = params.get('payment');
+    const orderId = params.get('orderId') || localStorage.getItem('kicksclub_last_order_id');
+
+    if (payment === 'success') {
+      setCart([]);
+      try {
+        localStorage.removeItem('kicksclub_cart');
+        localStorage.removeItem('kicksclub_last_order_id');
+      } catch { /* ignore */ }
+
+      addToast({
+        type: 'success',
+        title: 'Pagamento Confirmado! 🎉',
+        message: orderId
+          ? `A tua encomenda ${orderId} foi confirmada com sucesso!`
+          : 'O teu pagamento foi processado com sucesso!',
+      });
+
+      if (orderId) {
+        setTrackingInitialCode(orderId);
+      }
+
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (payment === 'cancelled') {
+      addToast({
+        type: 'info',
+        title: 'Pagamento Cancelado',
+        message: 'O pagamento não foi concluído. Os teus artigos continuam no carrinho.',
+      });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   // ── Toast helpers ──────────────────────────────────────────────
   const addToast = (toast: Omit<ToastMessage, 'id'>) => {
     const id = `${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;

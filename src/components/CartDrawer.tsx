@@ -159,6 +159,27 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         total,
       };
 
+      // Tentar checkout seguro via Stripe (Cartão, MB WAY, Multibanco)
+      try {
+        const stripeRes = await fetch('/api/checkout/create-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(orderPayload),
+        });
+
+        if (stripeRes.ok) {
+          const sessionData = await stripeRes.json();
+          if (sessionData?.url) {
+            localStorage.setItem('kicksclub_last_order_id', sessionData.orderId);
+            onClearCart();
+            window.location.href = sessionData.url;
+            return;
+          }
+        }
+      } catch (stripeErr) {
+        console.warn('[Stripe Checkout] Falha ao criar sessão Stripe, a utilizar fluxo direto:', stripeErr);
+      }
+
       let createdOrder: Order;
 
       if (onSubmitOrder) {

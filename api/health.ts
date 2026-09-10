@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getDb } from '../lib/db.js';
-import { setCors } from '../lib/apiHelpers.js';
+import { getDb } from '../lib/db';
+import { setCors } from '../lib/apiHelpers';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCors(res);
