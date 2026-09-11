@@ -11,7 +11,6 @@ import {
   Sparkles,
   Home,
   Check,
-  Lock,
   ShieldCheck
 } from 'lucide-react';
 import { Sneaker, StoreCategory } from '../types';
@@ -29,7 +28,6 @@ interface HeaderProps {
   onSelectCategory: (category: string) => void;
   searchTerm: string;
   currentPage?: string;
-  onOpenAdmin?: () => void;
   categories?: StoreCategory[];
   onOpenPolicies?: (tab?: PolicyTab) => void;
 }
@@ -45,7 +43,6 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectCategory,
   searchTerm,
   currentPage = 'home',
-  onOpenAdmin,
   categories = INITIAL_CATEGORIES,
   onOpenPolicies,
 }) => {
@@ -137,19 +134,23 @@ export const Header: React.FC<HeaderProps> = ({
 
             <button
               onClick={onOpenHelp}
-              className="flex items-center gap-1.5 hover:text-[#FFDD00] transition-colors py-2"
+              className={`flex items-center gap-1.5 transition-colors py-2 ${
+                currentPage === 'help' ? 'text-[#FFDD00]' : 'hover:text-[#FFDD00]'
+              }`}
             >
-              <HelpCircle className="w-4 h-4 text-neutral-400" />
+              <HelpCircle className={`w-4 h-4 ${currentPage === 'help' ? 'text-[#FFDD00]' : 'text-neutral-400'}`} />
               <span>AJUDA</span>
             </button>
 
             {onOpenPolicies && (
               <button
                 onClick={() => onOpenPolicies('sizes')}
-                className="flex items-center gap-1.5 hover:text-[#FFDD00] transition-colors py-2"
-                title="Políticas de Trocas, CTT e Garantia"
+                className={`flex items-center gap-1.5 transition-colors py-2 ${
+                  currentPage === 'policies' ? 'text-[#FFDD00]' : 'hover:text-[#FFDD00]'
+                }`}
+                title="Políticas de Trocas, Envios e Garantia"
               >
-                <ShieldCheck className="w-4 h-4 text-neutral-400" />
+                <ShieldCheck className={`w-4 h-4 ${currentPage === 'policies' ? 'text-[#FFDD00]' : 'text-neutral-400'}`} />
                 <span>POLÍTICAS</span>
               </button>
             )}
@@ -163,21 +164,6 @@ export const Header: React.FC<HeaderProps> = ({
               <Truck className={`w-4 h-4 ${currentPage === 'tracking' ? 'text-[#FFDD00]' : 'text-neutral-400'}`} />
               <span>RASTREIO</span>
             </button>
-
-            {onOpenAdmin && (
-              <button
-                onClick={onOpenAdmin}
-                className={`flex items-center gap-1.5 transition-colors py-2 px-2.5 rounded-lg border ${
-                  currentPage.startsWith('admin')
-                    ? 'text-[#FFDD00] bg-neutral-900 border-[#FFDD00]/40'
-                    : 'text-neutral-400 hover:text-white border-transparent hover:border-neutral-800'
-                }`}
-                title="Portal de Administração"
-              >
-                <Lock className={`w-3.5 h-3.5 ${currentPage.startsWith('admin') ? 'text-[#FFDD00]' : 'text-neutral-500'}`} />
-                <span>ADMIN</span>
-              </button>
-            )}
           </nav>
 
           {/* Action Icons: Wishlist & Cart */}
@@ -277,29 +263,17 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
+          {/* Tracking */}
           <button
             onClick={() => {
               onOpenTracking();
               setMobileMenuOpen(false);
             }}
-            className="w-full flex items-center gap-3 py-2.5 text-sm font-bold text-white hover:text-[#FFDD00] border-b border-neutral-800"
+            className="w-full flex items-center gap-3 py-2.5 text-sm font-bold text-white hover:text-[#FFDD00]"
           >
             <Truck className="w-4 h-4 text-[#FFDD00]" />
             RASTREAR ENCOMENDA
           </button>
-
-          {onOpenAdmin && (
-            <button
-              onClick={() => {
-                onOpenAdmin();
-                setMobileMenuOpen(false);
-              }}
-              className="w-full flex items-center gap-3 py-2.5 text-sm font-bold text-[#FFDD00] hover:text-white"
-            >
-              <Lock className="w-4 h-4 text-[#FFDD00]" />
-              PAINEL DE ADMINISTRAÇÃO
-            </button>
-          )}
         </div>
       )}
     </header>

@@ -14,7 +14,6 @@ import {
   MessageCircle, 
   Mail, 
   Clock, 
-  Lock, 
   ChevronDown,
   Layers
 } from 'lucide-react';
@@ -27,7 +26,6 @@ interface FooterProps {
   onOpenTracking: () => void;
   onOpenCart: () => void;
   onSelectCategory: (category: string) => void;
-  onOpenAdmin?: () => void;
   onOpenPolicies?: (tab: PolicyTab) => void;
   onOpenPrivacy?: () => void;
 }
@@ -38,7 +36,6 @@ export const Footer: React.FC<FooterProps> = ({
   onOpenTracking,
   onOpenCart,
   onSelectCategory,
-  onOpenAdmin,
   onOpenPolicies,
   onOpenPrivacy,
 }) => {
@@ -197,17 +194,6 @@ export const Footer: React.FC<FooterProps> = ({
                   <span>Política de Privacidade (RGPD)</span>
                 </button>
               </li>
-              {onOpenAdmin && (
-                <li>
-                  <button
-                    onClick={onOpenAdmin}
-                    className="hover:text-[#FFDD00] transition-colors flex items-center gap-2 text-neutral-400 font-semibold"
-                  >
-                    <Lock className="w-3.5 h-3.5 text-[#FFDD00]" />
-                    <span>Portal de Administração</span>
-                  </button>
-                </li>
-              )}
             </ul>
           </div>
 

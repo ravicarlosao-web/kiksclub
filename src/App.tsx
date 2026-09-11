@@ -23,6 +23,8 @@ import { useOrders } from './hooks/useOrders';
 import { Search, Sparkles, X, Filter, ArrowUpDown, Loader2 } from 'lucide-react';
 import { ProductCard } from './components/ProductCard';
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
+import { PoliciesPage } from './components/PoliciesPage';
+import { HelpFaqPage } from './components/HelpFaqPage';
 
 const getCategorySectionInfo = (catId: string, defaultName: string) => {
   switch (catId.toLowerCase()) {
@@ -105,8 +107,15 @@ export default function App() {
   const [selectedBrandFilter, setSelectedBrandFilter] = useState<string>('ALL');
   const [searchSort, setSearchSort] = useState<'default' | 'price-asc' | 'price-desc'>('default');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [currentPage, setCurrentPage] = useState<'home' | 'tracking' | 'admin-login' | 'admin-dashboard' | 'privacy'>(() => {
+  const [currentPage, setCurrentPage] = useState<'home' | 'tracking' | 'admin-login' | 'admin-dashboard' | 'privacy' | 'policies' | 'help'>(() => {
     const path = typeof window !== 'undefined' ? window.location.pathname.toLowerCase() : '';
+    const hash = typeof window !== 'undefined' ? window.location.hash.toLowerCase() : '';
+    if (path === '/admin' || hash === '#admin') {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('kicksclub_admin') : null;
+      return saved ? 'admin-dashboard' : 'admin-login';
+    }
+    if (path === '/politicas' || path === '/policies' || hash === '#politicas') return 'policies';
+    if (path === '/ajuda' || path === '/help' || path === '/faq' || hash === '#ajuda') return 'help';
     if (path === '/politica-privacidade' || path === '/privacidade') return 'privacy';
     if (path === '/rastreio' || path === '/tracking') return 'tracking';
     return 'home';
@@ -193,7 +202,9 @@ export default function App() {
 
   const handleOpenPolicies = (tab: PolicyTab = 'sizes') => {
     setActivePolicyTab(tab);
-    setIsPoliciesOpen(true);
+    setCurrentPage('policies');
+    window.history.pushState({}, '', '/politicas');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // ── Admin Auth Handlers ────────────────────────────────────────
@@ -434,19 +445,43 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleNavigateToPolicies = (tab: PolicyTab = 'sizes') => {
+    handleOpenPolicies(tab);
+  };
+
+  const handleNavigateToHelp = () => {
+    setCurrentPage('help');
+    window.history.pushState({}, '', '/ajuda');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   useEffect(() => {
-    const handlePopState = () => {
+    const handleRouteSync = () => {
       const path = window.location.pathname.toLowerCase();
-      if (path === '/politica-privacidade' || path === '/privacidade') {
+      const hash = window.location.hash.toLowerCase();
+
+      if (path === '/admin' || hash === '#admin') {
+        const saved = localStorage.getItem('kicksclub_admin');
+        setCurrentPage(saved ? 'admin-dashboard' : 'admin-login');
+      } else if (path === '/politicas' || path === '/policies' || hash === '#politicas') {
+        setCurrentPage('policies');
+      } else if (path === '/ajuda' || path === '/help' || path === '/faq' || hash === '#ajuda') {
+        setCurrentPage('help');
+      } else if (path === '/politica-privacidade' || path === '/privacidade') {
         setCurrentPage('privacy');
       } else if (path === '/rastreio' || path === '/tracking') {
         setCurrentPage('tracking');
-      } else if (path === '/') {
+      } else if (path === '/' || hash === '') {
         setCurrentPage('home');
       }
     };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+
+    window.addEventListener('popstate', handleRouteSync);
+    window.addEventListener('hashchange', handleRouteSync);
+    return () => {
+      window.removeEventListener('popstate', handleRouteSync);
+      window.removeEventListener('hashchange', handleRouteSync);
+    };
   }, []);
 
   // ── Loading Screen ─────────────────────────────────────────────
@@ -504,9 +539,8 @@ export default function App() {
         onOpenCart={() => setIsCartOpen(true)}
         onOpenWishlist={() => setIsWishlistOpen(true)}
         onOpenTracking={handleNavigateToTracking}
-        onOpenHelp={() => setIsHelpOpen(true)}
-        onOpenAdmin={handleOpenAdmin}
-        onOpenPolicies={handleOpenPolicies}
+        onOpenHelp={handleNavigateToHelp}
+        onOpenPolicies={handleNavigateToPolicies}
         onSearch={(term) => { setSearchTerm(term); if (currentPage !== 'home') setCurrentPage('home'); }}
         onSelectCategory={(cat) => { setSelectedCategory(cat); if (currentPage !== 'home') setCurrentPage('home'); }}
         searchTerm={searchTerm}
@@ -527,6 +561,16 @@ export default function App() {
         ) : currentPage === 'privacy' ? (
           <PrivacyPolicyPage
             onNavigateHome={handleNavigateToHome}
+          />
+        ) : currentPage === 'policies' ? (
+          <PoliciesPage
+            initialTab={activePolicyTab}
+            onNavigateHome={handleNavigateToHome}
+          />
+        ) : currentPage === 'help' ? (
+          <HelpFaqPage
+            onNavigateHome={handleNavigateToHome}
+            onOpenTracking={handleNavigateToTracking}
           />
         ) : (
           <>
@@ -712,10 +756,9 @@ export default function App() {
       {/* 10. Footer */}
       <Footer
         categories={categories}
-        onOpenHelp={() => setIsHelpOpen(true)}
+        onOpenHelp={handleNavigateToHelp}
         onOpenTracking={handleNavigateToTracking}
-        onOpenAdmin={handleOpenAdmin}
-        onOpenPolicies={handleOpenPolicies}
+        onOpenPolicies={handleNavigateToPolicies}
         onOpenPrivacy={handleNavigateToPrivacy}
         onOpenCart={() => { setDirectSneakerForDrawer(null); setIsCartOpen(true); }}
         onSelectCategory={(cat) => {
