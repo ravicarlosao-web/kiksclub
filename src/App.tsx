@@ -22,6 +22,7 @@ import { useCategories } from './hooks/useCategories';
 import { useOrders } from './hooks/useOrders';
 import { Search, Sparkles, X, Filter, ArrowUpDown, Loader2 } from 'lucide-react';
 import { ProductCard } from './components/ProductCard';
+import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
 
 const getCategorySectionInfo = (catId: string, defaultName: string) => {
   switch (catId.toLowerCase()) {
@@ -67,6 +68,7 @@ export default function App() {
     updateOrderStatus,
     updateOrderTracking,
     deleteOrder,
+    anonymizeOrderCustomer,
   } = useOrders();
 
   // ── Admin Auth (JWT no localStorage) ──────────────────────────
@@ -103,7 +105,12 @@ export default function App() {
   const [selectedBrandFilter, setSelectedBrandFilter] = useState<string>('ALL');
   const [searchSort, setSearchSort] = useState<'default' | 'price-asc' | 'price-desc'>('default');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [currentPage, setCurrentPage] = useState<'home' | 'tracking' | 'admin-login' | 'admin-dashboard'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'tracking' | 'admin-login' | 'admin-dashboard' | 'privacy'>(() => {
+    const path = typeof window !== 'undefined' ? window.location.pathname.toLowerCase() : '';
+    if (path === '/politica-privacidade' || path === '/privacidade') return 'privacy';
+    if (path === '/rastreio' || path === '/tracking') return 'tracking';
+    return 'home';
+  });
 
   // Modals
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -190,8 +197,9 @@ export default function App() {
   };
 
   // ── Admin Auth Handlers ────────────────────────────────────────
-  const handleAdminLogin = (user: AdminUser, token: string) => {
-    localStorage.setItem('kicksclub_jwt', token);
+  const handleAdminLogin = (user: AdminUser, _token?: string) => {
+    // O token JWT de admin é mantido com segurança no cookie HttpOnly pelo backend
+    try { localStorage.removeItem('kicksclub_jwt'); } catch { /* ignore */ }
     setAdminUser(user);
     setCurrentPage('admin-dashboard');
     // Carregar encomendas quando admin faz login
@@ -199,8 +207,17 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleAdminLogout = () => {
+  const handleAdminLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch (e) {
+      console.error('[Logout]', e);
+    }
     setAdminUser(null);
+    try {
+      localStorage.removeItem('kicksclub_admin');
+      localStorage.removeItem('kicksclub_jwt');
+    } catch { /* ignore */ }
     setCurrentPage('home');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -399,8 +416,38 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleNavigateToTracking = () => { setCurrentPage('tracking'); window.scrollTo({ top: 0, behavior: 'smooth' }); };
-  const handleNavigateToHome = () => { setCurrentPage('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const handleNavigateToTracking = () => {
+    setCurrentPage('tracking');
+    window.history.pushState({}, '', '/tracking');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNavigateToHome = () => {
+    setCurrentPage('home');
+    window.history.pushState({}, '', '/');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNavigateToPrivacy = () => {
+    setCurrentPage('privacy');
+    window.history.pushState({}, '', '/politica-privacidade');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.toLowerCase();
+      if (path === '/politica-privacidade' || path === '/privacidade') {
+        setCurrentPage('privacy');
+      } else if (path === '/rastreio' || path === '/tracking') {
+        setCurrentPage('tracking');
+      } else if (path === '/') {
+        setCurrentPage('home');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // ── Loading Screen ─────────────────────────────────────────────
   const isInitialLoading = loadingProducts || loadingCategories;
@@ -439,6 +486,7 @@ export default function App() {
         onResetOrders={() => {}}
         onLogout={handleAdminLogout}
         onNavigateHome={handleNavigateToHome}
+        onAnonymizeCustomer={anonymizeOrderCustomer}
       />
     );
   }
@@ -475,6 +523,10 @@ export default function App() {
             initialCode={trackingInitialCode}
             onNavigateHome={handleNavigateToHome}
             fetchOrderByCode={fetchOrderByCode}
+          />
+        ) : currentPage === 'privacy' ? (
+          <PrivacyPolicyPage
+            onNavigateHome={handleNavigateToHome}
           />
         ) : (
           <>
@@ -664,6 +716,7 @@ export default function App() {
         onOpenTracking={handleNavigateToTracking}
         onOpenAdmin={handleOpenAdmin}
         onOpenPolicies={handleOpenPolicies}
+        onOpenPrivacy={handleNavigateToPrivacy}
         onOpenCart={() => { setDirectSneakerForDrawer(null); setIsCartOpen(true); }}
         onSelectCategory={(cat) => {
           if (currentPage !== 'home') setCurrentPage('home');
@@ -704,6 +757,7 @@ export default function App() {
         directSneaker={directSneakerForDrawer}
         onAddDirectSneaker={(p, size) => handleAddToCart(p, size, 1)}
         onOpenPolicies={handleOpenPolicies}
+        onOpenPrivacy={handleNavigateToPrivacy}
       />
 
       <HelpFaqModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />

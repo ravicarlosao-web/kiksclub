@@ -1,9 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { verifyToken, extractToken, type JwtPayload } from './auth';
+import { verifyToken, extractTokenFromRequest, type JwtPayload } from './auth';
 
-/** Define os headers CORS na resposta */
-export function setCors(res: VercelResponse): void {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+/** Define os headers CORS na resposta com suporte a credentials */
+export function setCors(res: VercelResponse, req?: VercelRequest): void {
+  const origin = req?.headers?.origin || '*';
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
@@ -14,7 +16,7 @@ export function setCors(res: VercelResponse): void {
  *   if (handleOptions(req, res)) return;
  */
 export function handleOptions(req: VercelRequest, res: VercelResponse): boolean {
-  setCors(res);
+  setCors(res, req);
   if (req.method === 'OPTIONS') {
     res.status(204).end();
     return true;
@@ -24,11 +26,12 @@ export function handleOptions(req: VercelRequest, res: VercelResponse): boolean 
 
 /**
  * Middleware de autenticação JWT.
+ * Lê o token prioritariamente do cookie kicksclub_admin_token e como fallback do header Authorization.
  * Retorna o payload do token se válido, ou escreve 401 e retorna null.
  */
 export function requireAuth(req: VercelRequest, res: VercelResponse): JwtPayload | null {
-  setCors(res);
-  const token = extractToken(req.headers.authorization as string | undefined);
+  setCors(res, req);
+  const token = extractTokenFromRequest(req);
 
   if (!token) {
     res.status(401).json({ error: 'Não autorizado — token em falta' });

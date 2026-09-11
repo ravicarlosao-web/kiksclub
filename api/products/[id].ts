@@ -2,14 +2,16 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@libsql/client/http';
 import jwt from 'jsonwebtoken';
 
-function setCors(res: VercelResponse): void {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+function setCors(res: VercelResponse, req?: VercelRequest): void {
+  const origin = req?.headers?.origin || '*';
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
 
 function handleOptions(req: VercelRequest, res: VercelResponse): boolean {
-  setCors(res);
+  setCors(res, req);
   if (req.method === 'OPTIONS') {
     res.status(204).end();
     return true;
@@ -18,7 +20,6 @@ function handleOptions(req: VercelRequest, res: VercelResponse): boolean {
 }
 
 function jsonError(res: VercelResponse, status: number, message: string): void {
-  setCors(res);
   res.status(status).json({ error: message });
 }
 
@@ -62,14 +63,23 @@ function rowToProduct(row: Record<string, unknown>) {
   };
 }
 
-function requireAuth(req: VercelRequest, res: VercelResponse) {
-  setCors(res);
+function extractToken(req: VercelRequest): string | null {
+  if (req.headers.cookie) {
+    const match = req.headers.cookie.match(/(?:^|;\s*)kicksclub_admin_token=([^;]+)/);
+    if (match) return decodeURIComponent(match[1].trim());
+  }
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (authHeader && authHeader.startsWith('Bearer ')) return authHeader.slice(7).trim();
+  return null;
+}
+
+function requireAuth(req: VercelRequest, res: VercelResponse) {
+  setCors(res, req);
+  const token = extractToken(req);
+  if (!token) {
     res.status(401).json({ error: 'Não autorizado — token em falta' });
     return null;
   }
-  const token = authHeader.slice(7).trim();
   const secret = (process.env.JWT_SECRET || '').trim();
   if (!secret || secret.length < 32) {
     res.status(500).json({ error: 'Configuração de segurança JWT ausente no servidor' });

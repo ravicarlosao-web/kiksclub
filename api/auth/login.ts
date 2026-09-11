@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@libsql/client/http';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { captureBackendException, captureSecurityEvent } from '../../lib/sentry';
 function getJwtSecret(): string {
   const secret = (process.env.JWT_SECRET || '').trim();
   if (!secret || secret.length < 32) {
@@ -9,14 +10,16 @@ function getJwtSecret(): string {
   }
   return secret;
 }
-function setCors(res: VercelResponse): void {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+function setCors(req: VercelRequest, res: VercelResponse): void {
+  const origin = req.headers.origin || '*';
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
 
 function handleOptions(req: VercelRequest, res: VercelResponse): boolean {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') {
     res.status(204).end();
     return true;
@@ -24,8 +27,8 @@ function handleOptions(req: VercelRequest, res: VercelResponse): boolean {
   return false;
 }
 
-function jsonError(res: VercelResponse, status: number, message: string): void {
-  setCors(res);
+function jsonError(req: VercelRequest, res: VercelResponse, status: number, message: string): void {
+  setCors(req, res);
   res.status(status).json({ error: message });
 }
 
@@ -40,13 +43,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleOptions(req, res)) return;
 
   if (req.method !== 'POST') {
-    return jsonError(res, 405, 'Método não suportado');
+    return jsonError(req, res, 405, 'Método não suportado');
   }
 
   const { email, password } = req.body || {};
 
   if (!email || !password) {
-    return jsonError(res, 400, 'Email e password são obrigatórios');
+    return jsonError(req, res, 400, 'Email e password são obrigatórios');
   }
 
   try {
@@ -58,15 +61,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     if (result.rows.length === 0) {
+      captureSecurityEvent('Tentativa de login falhada — utilizador não encontrado', { email: String(email).trim().toLowerCase() });
       await new Promise((r) => setTimeout(r, 400));
-      return jsonError(res, 401, 'Credenciais inválidas');
+      return jsonError(req, res, 401, 'Credenciais inválidas');
     }
 
     const user = result.rows[0];
     const isValid = await bcrypt.compare(String(password), user.password_hash as string);
 
     if (!isValid) {
-      return jsonError(res, 401, 'Credenciais inválidas');
+      captureSecurityEvent('Tentativa de login falhada — password incorreta', { email: String(email).trim().toLowerCase() });
+      return jsonError(req, res, 401, 'Credenciais inválidas');
     }
 
     // Actualizar last_login
@@ -87,7 +92,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       { algorithm: 'HS256', expiresIn: '7d' }
     );
 
-    setCors(res);
+    setCors(req, res);
+    // Definir cookie HttpOnly seguro com SameSite=Strict e Max-Age (7 dias)
+    res.setHeader(
+      'Set-Cookie',
+      `kicksclub_admin_token=${token}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=604800`
+    );
+
     res.status(200).json({
       token,
       user: {
@@ -99,6 +110,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (err: any) {
     console.error('[POST /api/auth/login]', err);
-    jsonError(res, 500, `Erro no servidor de autenticação: ${err.message}`);
+    captureBackendException(err, { endpoint: '/api/auth/login' });
+    jsonError(req, res, 500, `Erro no servidor de autenticação: ${err.message}`);
   }
 }

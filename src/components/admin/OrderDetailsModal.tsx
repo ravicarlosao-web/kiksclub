@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Package, Truck, CheckCircle2, Clock, AlertTriangle, MessageCircle, MapPin, Phone, Mail, User, CreditCard, Hash, Calendar, Trash2, Save, Send } from 'lucide-react';
+import { X, Package, Truck, CheckCircle2, Clock, AlertTriangle, MessageCircle, MapPin, Phone, Mail, User, CreditCard, Hash, Calendar, Trash2, Save, Send, ShieldCheck } from 'lucide-react';
 import { Order, OrderStatus } from '../../types';
 
 interface OrderDetailsModalProps {
@@ -9,6 +9,7 @@ interface OrderDetailsModalProps {
   onUpdateStatus: (orderId: string, status: OrderStatus) => void;
   onUpdateTrackingCode: (orderId: string, trackingCode: string) => void;
   onDeleteOrder: (orderId: string) => void;
+  onAnonymizeCustomer?: (orderId: string) => void;
 }
 
 const STATUS_OPTIONS: { label: string; value: OrderStatus; color: string }[] = [
@@ -29,6 +30,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   onUpdateStatus,
   onUpdateTrackingCode,
   onDeleteOrder,
+  onAnonymizeCustomer,
 }) => {
   if (!isOpen || !order) return null;
 
@@ -315,21 +317,40 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
             </div>
           </div>
 
-          {/* Danger Zone: Delete Order */}
-          <div className="pt-2 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => {
-                if (window.confirm(`Tem a certeza que deseja remover o pedido ${order.id}?`)) {
-                  onDeleteOrder(order.id);
-                  onClose();
-                }
-              }}
-              className="px-4 py-2 bg-red-950/40 hover:bg-red-900/60 border border-red-800/60 text-red-300 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Remover Pedido</span>
-            </button>
+          {/* Danger Zone: Delete / Anonymize Order */}
+          <div className="pt-2 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm(`Tem a certeza que deseja remover o pedido ${order.id}?`)) {
+                    onDeleteOrder(order.id);
+                    onClose();
+                  }
+                }}
+                className="px-4 py-2 bg-red-950/40 hover:bg-red-900/60 border border-red-800/60 text-red-300 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Remover Pedido</span>
+              </button>
+
+              {onAnonymizeCustomer && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm(`Tem a certeza que deseja anonimizar os dados pessoais do cliente deste pedido (${order.id}) ao abrigo do RGPD? Os dados fiscais/contabilísticos serão mantidos mas nome, morada, email e telefone serão anonimizados.`)) {
+                      onAnonymizeCustomer(order.id);
+                      onClose();
+                    }
+                  }}
+                  className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-300 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors"
+                  title="Anonimizar PII do cliente ao abrigo do RGPD (Direito ao Esquecimento)"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#FFDD00]" />
+                  <span>Anonimizar (RGPD)</span>
+                </button>
+              )}
+            </div>
 
             <button
               type="button"

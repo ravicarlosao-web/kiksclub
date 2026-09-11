@@ -2,14 +2,16 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@libsql/client/http';
 import jwt from 'jsonwebtoken';
 
-function setCors(res: VercelResponse): void {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, PATCH, DELETE, OPTIONS');
+function setCors(res: VercelResponse, req?: VercelRequest): void {
+  const origin = req?.headers?.origin || '*';
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
 
 function handleOptions(req: VercelRequest, res: VercelResponse): boolean {
-  setCors(res);
+  setCors(res, req);
   if (req.method === 'OPTIONS') {
     res.status(204).end();
     return true;
@@ -18,7 +20,6 @@ function handleOptions(req: VercelRequest, res: VercelResponse): boolean {
 }
 
 function jsonError(res: VercelResponse, status: number, message: string): void {
-  setCors(res);
   res.status(status).json({ error: message });
 }
 
@@ -61,10 +62,19 @@ function rowToOrder(row: Record<string, unknown>) {
   };
 }
 
-function checkAdmin(req: VercelRequest): any | null {
+function extractToken(req: VercelRequest): string | null {
+  if (req.headers.cookie) {
+    const match = req.headers.cookie.match(/(?:^|;\s*)kicksclub_admin_token=([^;]+)/);
+    if (match) return decodeURIComponent(match[1].trim());
+  }
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
-  const token = authHeader.slice(7).trim();
+  if (authHeader && authHeader.startsWith('Bearer ')) return authHeader.slice(7).trim();
+  return null;
+}
+
+function checkAdmin(req: VercelRequest): any | null {
+  const token = extractToken(req);
+  if (!token) return null;
   const secret = (process.env.JWT_SECRET || '').trim();
   if (!secret || secret.length < 32) return null;
   try {
@@ -75,7 +85,7 @@ function checkAdmin(req: VercelRequest): any | null {
 }
 
 function requireAuth(req: VercelRequest, res: VercelResponse) {
-  setCors(res);
+  setCors(res, req);
   const admin = checkAdmin(req);
   if (!admin) {
     res.status(401).json({ error: 'Não autorizado — token de administrador inválido ou ausente' });
@@ -182,6 +192,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
+  // ── POST /api/orders/:id?action=anonymize ou DELETE ?anonymize=true (Direito ao Esquecimento / RGPD) ──────
+  if ((req.method === 'POST' && (req.query.action === 'anonymize' || req.body?.action === 'anonymize')) ||
+      (req.method === 'DELETE' && req.query.anonymize === 'true')) {
+    const admin = requireAuth(req, res);
+    if (!admin) return;
+
+    try {
+      const db = getDb();
+      const check = await db.execute({ sql: 'SELECT id FROM orders WHERE UPPER(id) = ? LIMIT 1', args: [cleanId] });
+      if (check.rows.length === 0) return jsonError(res, 404, 'Encomenda não encontrada');
+
+      await db.execute({
+        sql: `UPDATE orders SET 
+          customer_name = '[DADOS ANONIMIZADOS RGPD]',
+          phone = '[ANONIMIZADO]',
+          email = 'anonimizado@rgpd.kicksclub.pt',
+          address = '[ANONIMIZADO]',
+          postal_code = '[ANONIMIZADO]',
+          city = '[ANONIMIZADO]',
+          notes = NULL,
+          updated_at = datetime('now')
+        WHERE UPPER(id) = ?`,
+        args: [cleanId],
+      });
+
+      setCors(res, req);
+      return res.status(200).json({
+        success: true,
+        message: 'Dados pessoais do cliente anonimizados com sucesso ao abrigo do RGPD (registo contabilístico preservado).',
+        orderId: cleanId,
+      });
+    } catch (err: any) {
+      console.error('[ANONYMIZE /api/orders/:id]', err);
+      return jsonError(res, 500, `Erro ao anonimizar dados do cliente: ${err.message}`);
+    }
+  }
+
   // ── DELETE /api/orders/:id ─────────────────────────────────────
   if (req.method === 'DELETE') {
     const admin = requireAuth(req, res);
@@ -190,7 +237,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       const db = getDb();
       await db.execute({ sql: 'DELETE FROM orders WHERE UPPER(id) = ?', args: [cleanId] });
-      setCors(res);
+      setCors(res, req);
       res.status(200).json({ message: 'Encomenda eliminada com sucesso' });
     } catch (err: any) {
       console.error('[DELETE /api/orders/:id]', err);

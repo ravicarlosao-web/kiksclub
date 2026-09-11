@@ -33,6 +33,7 @@ interface CartDrawerProps {
   onAddDirectSneaker?: (sneaker: Sneaker, size: number | string) => void;
   onOrderCreated?: (order: Order) => void;
   onOpenPolicies?: (tab: PolicyTab) => void;
+  onOpenPrivacy?: () => void;
   onSubmitOrder?: (orderData: Omit<Order, 'id' | 'createdAt' | 'status' | 'trackingCode'>) => Promise<Order>;
 }
 
@@ -51,12 +52,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onAddDirectSneaker,
   onOrderCreated,
   onOpenPolicies,
+  onOpenPrivacy,
   onSubmitOrder,
 }) => {
   const [couponCode, setCouponCode] = useState('');
   const [discountApplied, setDiscountApplied] = useState(false);
   const [couponError, setCouponError] = useState('');
   const [step, setStep] = useState<'selection' | 'delivery' | 'success'>('selection');
+  const [agreedPrivacy, setAgreedPrivacy] = useState(false);
   
   // Direct sneaker selection state
   const [directSize, setDirectSize] = useState<number>(41);
@@ -130,6 +133,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
   const handleDeliverySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!agreedPrivacy) {
+      alert('Por favor, confirma que leste e aceitas a Política de Privacidade (RGPD) para prosseguir.');
+      return;
+    }
     setIsSubmitting(true);
 
     try {
@@ -801,6 +808,34 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   </div>
                 </div>
 
+                {/* Termos & RGPD Checkbox Obrigatório */}
+                <div className="pt-3 pb-1 border-t border-neutral-200">
+                  <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      required
+                      checked={agreedPrivacy}
+                      onChange={(e) => setAgreedPrivacy(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded border-neutral-300 text-[#B45309] focus:ring-[#B45309] accent-[#B45309] cursor-pointer"
+                    />
+                    <span className="text-[11px] text-neutral-600 leading-snug">
+                      Li e aceito a{' '}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (onOpenPrivacy) {
+                            onOpenPrivacy();
+                          }
+                        }}
+                        className="text-black font-bold underline hover:text-[#B45309]"
+                      >
+                        Política de Privacidade (RGPD)
+                      </button>
+                      {' '}e autorizo o tratamento dos meus dados para expedição da encomenda pela KicksClub.pt.
+                    </span>
+                  </label>
+                </div>
+
               </form>
             )}
 
@@ -899,8 +934,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 <button
                   type="submit"
                   form="delivery-form"
-                  disabled={isSubmitting}
-                  className="w-full py-3.5 bg-[#FFDD00] hover:bg-[#FFE838] text-black font-black text-sm uppercase tracking-wider rounded-xl shadow-md shadow-[#FFDD00]/25 flex items-center justify-center gap-2 transition-all font-condensed hover:scale-[1.01] disabled:opacity-50"
+                  disabled={isSubmitting || !agreedPrivacy}
+                  className="w-full py-3.5 bg-[#FFDD00] hover:bg-[#FFE838] text-black font-black text-sm uppercase tracking-wider rounded-xl shadow-md shadow-[#FFDD00]/25 flex items-center justify-center gap-2 transition-all font-condensed hover:scale-[1.01] disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
                     <span>A Processar Pedido...</span>

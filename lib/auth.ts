@@ -43,3 +43,15 @@ export function extractToken(authHeader?: string): string | null {
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
   return authHeader.slice(7).trim();
 }
+
+/** Extrai o JWT do cookie HttpOnly kicksclub_admin_token ou do header Authorization */
+export function extractTokenFromRequest(req: { headers: { cookie?: string; authorization?: string } }): string | null {
+  if (req.headers.cookie) {
+    const match = req.headers.cookie.match(/(?:^|;\s*)kicksclub_admin_token=([^;]+)/);
+    if (match) {
+      return decodeURIComponent(match[1].trim());
+    }
+  }
+  return extractToken(req.headers.authorization);
+}
+

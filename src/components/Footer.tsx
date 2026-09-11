@@ -29,6 +29,7 @@ interface FooterProps {
   onSelectCategory: (category: string) => void;
   onOpenAdmin?: () => void;
   onOpenPolicies?: (tab: PolicyTab) => void;
+  onOpenPrivacy?: () => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({
@@ -39,6 +40,7 @@ export const Footer: React.FC<FooterProps> = ({
   onSelectCategory,
   onOpenAdmin,
   onOpenPolicies,
+  onOpenPrivacy,
 }) => {
   return (
     <footer className="bg-[#0D0D0D] text-neutral-300 pt-16 pb-12 border-t border-neutral-900">
@@ -188,11 +190,11 @@ export const Footer: React.FC<FooterProps> = ({
               </li>
               <li>
                 <button
-                  onClick={onOpenHelp}
-                  className="hover:text-[#FFDD00] transition-colors flex items-center gap-2 text-neutral-400"
+                  onClick={() => (onOpenPrivacy ? onOpenPrivacy() : onOpenHelp())}
+                  className="hover:text-[#FFDD00] transition-colors flex items-center gap-2 text-white font-medium"
                 >
-                  <FileText className="w-3.5 h-3.5 text-neutral-500" />
-                  <span>Termos & Privacidade</span>
+                  <FileText className="w-3.5 h-3.5 text-[#FFDD00]" />
+                  <span>Política de Privacidade (RGPD)</span>
                 </button>
               </li>
               {onOpenAdmin && (

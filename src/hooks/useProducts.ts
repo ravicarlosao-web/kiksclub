@@ -45,6 +45,7 @@ export function useProducts() {
     const res = await fetch(API, {
       method: 'POST',
       headers: authHeader(),
+      credentials: 'include',
       body: JSON.stringify(product),
     });
     if (!res.ok) {
@@ -60,6 +61,7 @@ export function useProducts() {
     const res = await fetch(`${API}/${product.id}`, {
       method: 'PUT',
       headers: authHeader(),
+      credentials: 'include',
       body: JSON.stringify(product),
     });
     if (!res.ok) {
@@ -75,6 +77,7 @@ export function useProducts() {
     const res = await fetch(`${API}/${id}`, {
       method: 'DELETE',
       headers: authHeader(),
+      credentials: 'include',
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: 'Erro ao eliminar produto' }));

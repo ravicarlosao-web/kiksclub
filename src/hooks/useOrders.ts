@@ -18,7 +18,10 @@ export function useOrders() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`${API}?limit=500`, { headers: authHeader() });
+      const res = await fetch(`${API}?limit=500`, {
+        headers: authHeader(),
+        credentials: 'include',
+      });
       if (!res.ok) throw new Error('Erro ao carregar encomendas');
       const data: Order[] = await res.json();
       setOrders(data);
@@ -64,6 +67,7 @@ export function useOrders() {
     const res = await fetch(`${API}/${orderId}`, {
       method: 'PUT',
       headers: authHeader(),
+      credentials: 'include',
       body: JSON.stringify({ status }),
     });
     if (!res.ok) throw new Error('Erro ao actualizar estado');
@@ -76,6 +80,7 @@ export function useOrders() {
     const res = await fetch(`${API}/${orderId}`, {
       method: 'PUT',
       headers: authHeader(),
+      credentials: 'include',
       body: JSON.stringify({ trackingCode }),
     });
     if (!res.ok) throw new Error('Erro ao actualizar tracking');
@@ -88,10 +93,25 @@ export function useOrders() {
     const res = await fetch(`${API}/${orderId}`, {
       method: 'DELETE',
       headers: authHeader(),
+      credentials: 'include',
     });
     if (!res.ok) throw new Error('Erro ao eliminar encomenda');
     setOrders((prev) => prev.filter((o) => o.id !== orderId));
   }, []);
+
+  /** Anonimiza os dados de cliente ao abrigo do RGPD (admin) */
+  const anonymizeOrderCustomer = useCallback(async (orderId: string): Promise<void> => {
+    const res = await fetch(`${API}/${orderId}?action=anonymize`, {
+      method: 'POST',
+      headers: authHeader(),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Erro ao anonimizar dados' }));
+      throw new Error(err.error || 'Erro ao anonimizar dados');
+    }
+    await fetchOrders();
+  }, [fetchOrders]);
 
   return {
     orders,
@@ -103,5 +123,6 @@ export function useOrders() {
     updateOrderStatus,
     updateOrderTracking,
     deleteOrder,
+    anonymizeOrderCustomer,
   };
 }

@@ -55,6 +55,7 @@ interface AdminDashboardPageProps {
   onResetOrders: () => void;
   onLogout: () => void;
   onNavigateHome: () => void;
+  onAnonymizeCustomer?: (orderId: string) => void;
 }
 
 type TabType = 'overview' | 'products' | 'categories' | 'orders' | 'settings';
@@ -78,6 +79,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   onResetOrders,
   onLogout,
   onNavigateHome,
+  onAnonymizeCustomer,
 }) => {
   const [currentTab, setCurrentTab] = useState<TabType>('overview');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -1333,6 +1335,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         onUpdateStatus={onUpdateOrderStatus}
         onUpdateTrackingCode={onUpdateOrderTracking}
         onDeleteOrder={onDeleteOrder}
+        onAnonymizeCustomer={onAnonymizeCustomer}
       />
 
     </div>

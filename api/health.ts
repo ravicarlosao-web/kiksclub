@@ -2,9 +2,15 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@libsql/client/http';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  // 1. Proteção de Acesso: Exige header secreto x-debug-token
+  const debugToken = (process.env.DEBUG_TOKEN || '').trim();
+  const clientToken = (req.headers['x-debug-token'] as string || '').trim();
+
+  // Se o token de debug não estiver configurado ou não coincidir, retorna 404
+  // para ocultar totalmente a existência do endpoint de diagnóstico
+  if (!debugToken || !clientToken || debugToken !== clientToken) {
+    return res.status(404).end();
+  }
 
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
@@ -13,39 +19,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const rawUrl = (process.env.TURSO_DATABASE_URL || '').trim();
   const url = rawUrl.replace(/^libsql:\/\//, 'https://');
   const token = (process.env.TURSO_AUTH_TOKEN || '').trim();
-  const stripeKey = (process.env.STRIPE_SECRET_KEY || '').trim();
-  const stripePub = (process.env.VITE_STRIPE_PUBLISHABLE_KEY || '').trim();
-  const stripeWebhook = (process.env.STRIPE_WEBHOOK_SECRET || '').trim();
 
-  const checks: Record<string, string> = {
-    runtime: 'ok',
-    timestamp: new Date().toISOString(),
-    node: process.version,
-    turso_url: url ? '✅ definida' : '❌ em falta',
-    turso_token: token ? '✅ definida' : '❌ em falta',
-    cloudinary: process.env.CLOUDINARY_CLOUD_NAME ? '✅ definida' : '❌ em falta',
-    jwt_secret: process.env.JWT_SECRET ? '✅ definida' : '❌ em falta',
-    stripe_secret_key: stripeKey ? `✅ definida (${stripeKey.substring(0, 8)}...)` : '❌ em falta',
-    stripe_publishable_key: stripePub ? `✅ definida (${stripePub.substring(0, 8)}...)` : '❌ em falta',
-    stripe_webhook_secret: stripeWebhook ? `✅ definida (${stripeWebhook.substring(0, 8)}...)` : '❌ em falta',
-  };
+  let databaseConnected = false;
+  let productsCount = 0;
 
   if (url && token) {
     try {
       const db = createClient({ url, authToken: token });
       const result = await db.execute('SELECT COUNT(*) as total FROM products');
-      const total = result.rows[0]?.total ?? 0;
-      checks.database = `✅ ligada — ${total} produtos`;
-    } catch (err: any) {
-      checks.database = `❌ erro: ${err.message}`;
+      productsCount = Number(result.rows[0]?.total ?? 0);
+      databaseConnected = true;
+    } catch {
+      databaseConnected = false;
     }
-  } else {
-    checks.database = '❌ credenciais em falta';
   }
 
-  const allOk = !Object.values(checks).some((v) => String(v).startsWith('❌'));
+  // Resposta higienizada — SEM prefixos de chaves, SEM versões de software, SEM dados sensíveis
   return res.status(200).json({
-    status: allOk ? 'healthy' : 'degraded',
-    checks,
+    status: 'online',
+    timestamp: new Date().toISOString(),
+    services: {
+      database: databaseConnected ? 'connected' : 'disconnected',
+      productsInCatalog: productsCount,
+      stripeConfigured: Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET),
+      cloudinaryConfigured: Boolean(process.env.CLOUDINARY_CLOUD_NAME),
+      jwtConfigured: Boolean(process.env.JWT_SECRET && process.env.JWT_SECRET.length >= 32),
+    },
   });
 }
