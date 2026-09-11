@@ -1,6 +1,83 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getDb } from '../../lib/db';
-import { handleOptions, requireAuth, jsonError, rowToProduct } from '../../lib/apiHelpers';
+import { createClient } from '@libsql/client/http';
+import jwt from 'jsonwebtoken';
+
+function setCors(res: VercelResponse): void {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+}
+
+function handleOptions(req: VercelRequest, res: VercelResponse): boolean {
+  setCors(res);
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return true;
+  }
+  return false;
+}
+
+function jsonError(res: VercelResponse, status: number, message: string): void {
+  setCors(res);
+  res.status(status).json({ error: message });
+}
+
+function getDb() {
+  const rawUrl = (process.env.TURSO_DATABASE_URL || '').trim();
+  const url = rawUrl.replace(/^libsql:\/\//, 'https://');
+  const authToken = (process.env.TURSO_AUTH_TOKEN || '').trim();
+  return createClient({ url, authToken });
+}
+
+function safeJson<T>(str: string | null | undefined, fallback: T): T {
+  if (!str) return fallback;
+  try {
+    return JSON.parse(str) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function rowToProduct(row: Record<string, unknown>) {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    brand: row.brand as string,
+    category: row.category as string,
+    department: row.department as string | undefined,
+    subcategory: row.subcategory as string | undefined,
+    price: row.price as number,
+    originalPrice: row.original_price as number,
+    discountPercentage: row.discount_percentage as number,
+    image: row.image as string,
+    gallery: safeJson(row.gallery as string, []),
+    sizes: safeJson(row.sizes as string, []),
+    sizeStock: safeJson(row.size_stock as string, {}),
+    sizeType: row.size_type as string | undefined,
+    inStock: Boolean(row.in_stock),
+    featured: Boolean(row.featured),
+    tag: row.tag as string | undefined,
+    description: row.description as string,
+    details: safeJson(row.details as string, []),
+  };
+}
+
+function requireAuth(req: VercelRequest, res: VercelResponse) {
+  setCors(res);
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    res.status(401).json({ error: 'Não autorizado — token em falta' });
+    return null;
+  }
+  const token = authHeader.slice(7).trim();
+  try {
+    const secret = process.env.JWT_SECRET || 'fallback-dev-secret-change-in-production!';
+    return jwt.verify(token, secret);
+  } catch {
+    res.status(401).json({ error: 'Não autorizado — token inválido ou expirado' });
+    return null;
+  }
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleOptions(req, res)) return;
@@ -37,10 +114,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const result = await db.execute({ sql, args });
       const products = result.rows.map(rowToProduct);
 
+      setCors(res);
       res.status(200).json(products);
-    } catch (err) {
+    } catch (err: any) {
       console.error('[GET /api/products]', err);
-      jsonError(res, 500, 'Erro ao carregar produtos');
+      jsonError(res, 500, `Erro ao carregar produtos: ${err.message}`);
     }
     return;
   }
@@ -82,13 +160,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
 
       const created = await db.execute({ sql: 'SELECT * FROM products WHERE id = ?', args: [p.id] });
+      setCors(res);
       res.status(201).json(rowToProduct(created.rows[0] as Record<string, unknown>));
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error('[POST /api/products]', err);
-      if ((err as { code?: string }).code === 'SQLITE_CONSTRAINT_PRIMARYKEY') {
+      if (err.code === 'SQLITE_CONSTRAINT_PRIMARYKEY') {
         return jsonError(res, 409, 'Já existe um produto com este ID');
       }
-      jsonError(res, 500, 'Erro ao criar produto');
+      jsonError(res, 500, `Erro ao criar produto: ${err.message}`);
     }
     return;
   }

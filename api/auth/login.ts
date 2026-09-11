@@ -1,7 +1,36 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getDb } from '../../lib/db';
-import { signToken, comparePassword, extractToken } from '../../lib/auth';
-import { handleOptions, jsonError } from '../../lib/apiHelpers';
+import { createClient } from '@libsql/client/http';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback-dev-secret-change-in-production!';
+
+function setCors(res: VercelResponse): void {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+}
+
+function handleOptions(req: VercelRequest, res: VercelResponse): boolean {
+  setCors(res);
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return true;
+  }
+  return false;
+}
+
+function jsonError(res: VercelResponse, status: number, message: string): void {
+  setCors(res);
+  res.status(status).json({ error: message });
+}
+
+function getDb() {
+  const rawUrl = (process.env.TURSO_DATABASE_URL || '').trim();
+  const url = rawUrl.replace(/^libsql:\/\//, 'https://');
+  const authToken = (process.env.TURSO_AUTH_TOKEN || '').trim();
+  return createClient({ url, authToken });
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleOptions(req, res)) return;
@@ -21,17 +50,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Buscar utilizador admin na BD
     const result = await db.execute({
       sql: 'SELECT * FROM admin_users WHERE LOWER(email) = LOWER(?)',
-      args: [email.trim()],
+      args: [String(email).trim()],
     });
 
     if (result.rows.length === 0) {
-      // Mesmo que não encontre, responder com delay para evitar timing attacks
       await new Promise((r) => setTimeout(r, 400));
       return jsonError(res, 401, 'Credenciais inválidas');
     }
 
     const user = result.rows[0];
-    const isValid = await comparePassword(password, user.password_hash as string);
+    const isValid = await bcrypt.compare(String(password), user.password_hash as string);
 
     if (!isValid) {
       return jsonError(res, 401, 'Credenciais inválidas');
@@ -44,13 +72,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     // Assinar JWT
-    const token = signToken({
-      id: user.id as string,
-      email: user.email as string,
-      name: user.name as string,
-      role: user.role as 'admin' | 'manager',
-    });
+    const token = jwt.sign(
+      {
+        id: user.id as string,
+        email: user.email as string,
+        name: user.name as string,
+        role: (user.role as string) || 'admin',
+      },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
 
+    setCors(res);
     res.status(200).json({
       token,
       user: {
@@ -60,8 +93,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         lastLogin: new Date().toISOString(),
       },
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error('[POST /api/auth/login]', err);
-    jsonError(res, 500, 'Erro no servidor de autenticação');
+    jsonError(res, 500, `Erro no servidor de autenticação: ${err.message}`);
   }
 }

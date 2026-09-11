@@ -1,6 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@libsql/client/http';
-import { testHelper } from './_test_helper';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -20,7 +19,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const checks: Record<string, string> = {
     runtime: 'ok',
-    helper: testHelper(),
     timestamp: new Date().toISOString(),
     node: process.version,
     turso_url: url ? '✅ definida' : '❌ em falta',

@@ -1,6 +1,75 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getDb } from '../../lib/db';
-import { handleOptions, requireAuth, jsonError, rowToCategory } from '../../lib/apiHelpers';
+import { createClient } from '@libsql/client/http';
+import jwt from 'jsonwebtoken';
+
+function setCors(res: VercelResponse): void {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+}
+
+function handleOptions(req: VercelRequest, res: VercelResponse): boolean {
+  setCors(res);
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return true;
+  }
+  return false;
+}
+
+function jsonError(res: VercelResponse, status: number, message: string): void {
+  setCors(res);
+  res.status(status).json({ error: message });
+}
+
+function getDb() {
+  const rawUrl = (process.env.TURSO_DATABASE_URL || '').trim();
+  const url = rawUrl.replace(/^libsql:\/\//, 'https://');
+  const authToken = (process.env.TURSO_AUTH_TOKEN || '').trim();
+  return createClient({ url, authToken });
+}
+
+function safeJson<T>(str: string | null | undefined, fallback: T): T {
+  if (!str) return fallback;
+  try {
+    return JSON.parse(str) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function rowToCategory(row: Record<string, unknown>) {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    slug: row.slug as string,
+    description: row.description as string,
+    icon: row.icon as string,
+    subcategories: safeJson(row.subcategories as string, []),
+    bannerImage: row.banner_image as string | undefined,
+    bannerTag: row.banner_tag as string | undefined,
+    featured: Boolean(row.featured),
+    isActive: Boolean(row.is_active),
+    sortOrder: row.sort_order as number,
+  };
+}
+
+function requireAuth(req: VercelRequest, res: VercelResponse) {
+  setCors(res);
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    res.status(401).json({ error: 'Não autorizado — token em falta' });
+    return null;
+  }
+  const token = authHeader.slice(7).trim();
+  try {
+    const secret = process.env.JWT_SECRET || 'fallback-dev-secret-change-in-production!';
+    return jwt.verify(token, secret);
+  } catch {
+    res.status(401).json({ error: 'Não autorizado — token inválido ou expirado' });
+    return null;
+  }
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleOptions(req, res)) return;
@@ -8,6 +77,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { id } = req.query as { id: string };
 
   if (!id) return jsonError(res, 400, 'ID em falta');
+
+  // ── GET /api/categories/:id ────────────────────────────────────
+  if (req.method === 'GET') {
+    try {
+      const db = getDb();
+      const result = await db.execute({ sql: 'SELECT * FROM categories WHERE id = ?', args: [id] });
+      if (result.rows.length === 0) return jsonError(res, 404, 'Categoria não encontrada');
+      setCors(res);
+      res.status(200).json(rowToCategory(result.rows[0] as Record<string, unknown>));
+    } catch (err: any) {
+      console.error('[GET /api/categories/:id]', err);
+      jsonError(res, 500, `Erro ao carregar categoria: ${err.message}`);
+    }
+    return;
+  }
 
   // ── PUT /api/categories/:id ────────────────────────────────────
   if (req.method === 'PUT') {
@@ -24,8 +108,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           banner_image = ?, banner_tag = ?, featured = ?, is_active = ?, sort_order = ?
           WHERE id = ?`,
         args: [
-          c.name, c.slug, c.description ?? '',
-          c.icon ?? 'Package',
+          c.name, c.slug, c.description ?? '', c.icon ?? 'Package',
           JSON.stringify(c.subcategories ?? []),
           c.bannerImage ?? null, c.bannerTag ?? null,
           c.featured ? 1 : 0,
@@ -37,10 +120,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const updated = await db.execute({ sql: 'SELECT * FROM categories WHERE id = ?', args: [id] });
       if (updated.rows.length === 0) return jsonError(res, 404, 'Categoria não encontrada');
+      setCors(res);
       res.status(200).json(rowToCategory(updated.rows[0] as Record<string, unknown>));
-    } catch (err) {
+    } catch (err: any) {
       console.error('[PUT /api/categories/:id]', err);
-      jsonError(res, 500, 'Erro ao actualizar categoria');
+      jsonError(res, 500, `Erro ao actualizar categoria: ${err.message}`);
     }
     return;
   }
@@ -53,10 +137,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       const db = getDb();
       await db.execute({ sql: 'DELETE FROM categories WHERE id = ?', args: [id] });
+      setCors(res);
       res.status(200).json({ message: 'Categoria eliminada com sucesso' });
-    } catch (err) {
+    } catch (err: any) {
       console.error('[DELETE /api/categories/:id]', err);
-      jsonError(res, 500, 'Erro ao eliminar categoria');
+      jsonError(res, 500, `Erro ao eliminar categoria: ${err.message}`);
     }
     return;
   }
