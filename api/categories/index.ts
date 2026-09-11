@@ -88,7 +88,84 @@ function requireAuth(req: VercelRequest, res: VercelResponse) {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleOptions(req, res)) return;
 
-  // ── GET /api/categories ────────────────────────────────────────
+  const rawId = req.query.id;
+  const id = Array.isArray(rawId) ? rawId[0] : rawId;
+
+  // ── Se ID for fornecido: operações sobre categoria específica ──
+  if (id) {
+    // GET /api/categories/:id
+    if (req.method === 'GET') {
+      try {
+        const db = getDb();
+        const result = await db.execute({ sql: 'SELECT * FROM categories WHERE id = ?', args: [id] });
+        if (result.rows.length === 0) return jsonError(res, 404, 'Categoria não encontrada');
+        setCors(res);
+        res.status(200).json(rowToCategory(result.rows[0] as Record<string, unknown>));
+      } catch (err: any) {
+        console.error('[GET /api/categories/:id]', err);
+        jsonError(res, 500, `Erro ao carregar categoria: ${err.message}`);
+      }
+      return;
+    }
+
+    // PUT /api/categories/:id
+    if (req.method === 'PUT') {
+      const admin = requireAuth(req, res);
+      if (!admin) return;
+
+      try {
+        const db = getDb();
+        const c = req.body;
+
+        await db.execute({
+          sql: `UPDATE categories SET
+            name = ?, slug = ?, description = ?, icon = ?, subcategories = ?,
+            banner_image = ?, banner_tag = ?, featured = ?, is_active = ?, sort_order = ?
+            WHERE id = ?`,
+          args: [
+            c.name, c.slug, c.description ?? '', c.icon ?? 'Package',
+            JSON.stringify(c.subcategories ?? []),
+            c.bannerImage ?? null, c.bannerTag ?? null,
+            c.featured ? 1 : 0,
+            c.isActive !== false ? 1 : 0,
+            c.sortOrder ?? 99,
+            id,
+          ],
+        });
+
+        const updated = await db.execute({ sql: 'SELECT * FROM categories WHERE id = ?', args: [id] });
+        if (updated.rows.length === 0) return jsonError(res, 404, 'Categoria não encontrada');
+        setCors(res);
+        res.status(200).json(rowToCategory(updated.rows[0] as Record<string, unknown>));
+      } catch (err: any) {
+        console.error('[PUT /api/categories/:id]', err);
+        jsonError(res, 500, `Erro ao actualizar categoria: ${err.message}`);
+      }
+      return;
+    }
+
+    // DELETE /api/categories/:id
+    if (req.method === 'DELETE') {
+      const admin = requireAuth(req, res);
+      if (!admin) return;
+
+      try {
+        const db = getDb();
+        await db.execute({ sql: 'DELETE FROM categories WHERE id = ?', args: [id] });
+        setCors(res);
+        res.status(200).json({ message: 'Categoria eliminada com sucesso' });
+      } catch (err: any) {
+        console.error('[DELETE /api/categories/:id]', err);
+        jsonError(res, 500, `Erro ao eliminar categoria: ${err.message}`);
+      }
+      return;
+    }
+
+    return jsonError(res, 405, `Método ${req.method} não suportado`);
+  }
+
+  // ── Operações sobre a colecção (/api/categories) ───────────────
+  // GET /api/categories
   if (req.method === 'GET') {
     try {
       const db = getDb();
@@ -107,7 +184,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  // ── POST /api/categories ───────────────────────────────────────
+  // POST /api/categories
   if (req.method === 'POST') {
     const admin = requireAuth(req, res);
     if (!admin) return;

@@ -73,7 +73,9 @@ function rowToProduct(row: Record<string, unknown>) {
   return {
     id: row.id as string,
     name: row.name as string,
-    brand: row.brand as string,
+    brand: (row.brand_name || row.brand) as string,
+    brandId: (row.brand_id as string) || undefined,
+    brandLogo: (row.brand_logo as string) || undefined,
     category: row.category as string,
     department: row.department as string | undefined,
     subcategory: row.subcategory as string | undefined,
@@ -102,29 +104,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'GET') {
     try {
       const db = getDb();
-      const { department, category, search, featured, limit = '100', offset = '0' } = req.query as Record<string, string>;
+      const { department, category, search, featured, brand, brandId, limit = '100', offset = '0' } = req.query as Record<string, string>;
 
-      let sql = 'SELECT * FROM products WHERE 1=1';
+      let sql = `
+        SELECT p.*, b.name as brand_name, b.logo_url as brand_logo
+        FROM products p
+        LEFT JOIN brands b ON p.brand_id = b.id
+        WHERE 1=1
+      `;
       const args: (string | number)[] = [];
 
       if (department) {
-        sql += ' AND LOWER(department) = LOWER(?)';
+        sql += ' AND LOWER(p.department) = LOWER(?)';
         args.push(department);
       }
       if (category) {
-        sql += ' AND LOWER(category) = LOWER(?)';
+        sql += ' AND LOWER(p.category) = LOWER(?)';
         args.push(category);
       }
+      if (brandId) {
+        sql += ' AND p.brand_id = ?';
+        args.push(brandId);
+      } else if (brand) {
+        sql += ' AND (LOWER(p.brand) = LOWER(?) OR LOWER(b.name) = LOWER(?) OR p.brand_id = ?)';
+        args.push(brand, brand, brand);
+      }
       if (search) {
-        sql += ' AND (LOWER(name) LIKE ? OR LOWER(brand) LIKE ? OR LOWER(description) LIKE ?)';
+        sql += ' AND (LOWER(p.name) LIKE ? OR LOWER(p.brand) LIKE ? OR LOWER(b.name) LIKE ? OR LOWER(p.description) LIKE ?)';
         const term = `%${search.toLowerCase()}%`;
-        args.push(term, term, term);
+        args.push(term, term, term, term);
       }
       if (featured === 'true') {
-        sql += ' AND featured = 1';
+        sql += ' AND p.featured = 1';
       }
 
-      sql += ` ORDER BY featured DESC, created_at DESC LIMIT ? OFFSET ?`;
+      sql += ` ORDER BY p.featured DESC, p.created_at DESC LIMIT ? OFFSET ?`;
       args.push(parseInt(limit), parseInt(offset));
 
       const result = await db.execute({ sql, args });
@@ -148,18 +162,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const db = getDb();
       const p = req.body;
 
-      if (!p.id || !p.name || !p.brand || !p.category || !p.price || !p.image) {
-        return jsonError(res, 400, 'Campos obrigatórios em falta: id, name, brand, category, price, image');
+      if (!p.id || !p.name || (!p.brand && !p.brandId) || !p.category || !p.price || !p.image) {
+        return jsonError(res, 400, 'Campos obrigatórios em falta: id, name, brand/brandId, category, price, image');
+      }
+
+      let brandId = p.brandId || p.brand_id || null;
+      let brandName = p.brand || '';
+
+      // Se brandId for passado, buscar nome da marca se não veio
+      if (brandId && !brandName) {
+        const bRes = await db.execute({ sql: 'SELECT name FROM brands WHERE id = ?', args: [brandId] });
+        if (bRes.rows.length > 0) {
+          brandName = bRes.rows[0].name as string;
+        }
+      } else if (!brandId && brandName) {
+        // Tentar resolver brandId a partir do nome
+        const bRes = await db.execute({ sql: 'SELECT id FROM brands WHERE LOWER(name) = LOWER(?)', args: [brandName] });
+        if (bRes.rows.length > 0) {
+          brandId = bRes.rows[0].id as string;
+        }
       }
 
       await db.execute({
         sql: `INSERT INTO products
-          (id, name, brand, category, department, subcategory, price, original_price,
+          (id, name, brand, brand_id, category, department, subcategory, price, original_price,
            discount_percentage, image, gallery, sizes, size_stock, size_type,
            in_stock, featured, tag, description, details)
-          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         args: [
-          p.id, p.name, p.brand, p.category,
+          p.id, p.name, brandName, brandId, p.category,
           p.department ?? null, p.subcategory ?? null,
           p.price, p.originalPrice ?? p.price, p.discountPercentage ?? 0,
           p.image,
@@ -175,12 +206,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ],
       });
 
-      const created = await db.execute({ sql: 'SELECT * FROM products WHERE id = ?', args: [p.id] });
+      const created = await db.execute({
+        sql: `SELECT p.*, b.name as brand_name, b.logo_url as brand_logo
+              FROM products p
+              LEFT JOIN brands b ON p.brand_id = b.id
+              WHERE p.id = ?`,
+        args: [p.id],
+      });
       setCors(res);
       res.status(201).json(rowToProduct(created.rows[0] as Record<string, unknown>));
     } catch (err: any) {
       console.error('[POST /api/products]', err);
-      if (err.code === 'SQLITE_CONSTRAINT_PRIMARYKEY') {
+      if (err.code === 'SQLITE_CONSTRAINT_PRIMARYKEY' || err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
         return jsonError(res, 409, 'Já existe um produto com este ID');
       }
       jsonError(res, 500, `Erro ao criar produto: ${err.message}`);

@@ -23,8 +23,9 @@ import {
   Cloud,
   CheckCircle2
 } from 'lucide-react';
-import { Sneaker, StoreCategory } from '../../types';
+import { Sneaker, StoreCategory, Brand } from '../../types';
 import { getDefaultSizeStock } from '../../utils/stockUtils';
+import { AddEditBrandModal } from './AddEditBrandModal';
 
 interface AddEditProductModalProps {
   isOpen: boolean;
@@ -32,6 +33,8 @@ interface AddEditProductModalProps {
   onSave: (product: Sneaker) => void;
   productToEdit?: Sneaker | null;
   availableCategories?: StoreCategory[];
+  availableBrands?: Brand[];
+  onCreateBrand?: (brandData: { name: string; logoUrl?: string; description?: string }) => Promise<void>;
 }
 
 const DEFAULT_BRANDS = [
@@ -121,12 +124,16 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
   onClose,
   onSave,
   productToEdit,
-  availableCategories = []
+  availableCategories = [],
+  availableBrands = [],
+  onCreateBrand
 }) => {
   const isEditing = Boolean(productToEdit);
 
   const [name, setName] = useState('');
-  const [brand, setBrand] = useState('NIKE');
+  const [brand, setBrand] = useState('Nike');
+  const [selectedBrandId, setSelectedBrandId] = useState<string>('');
+  const [isInlineBrandModalOpen, setIsInlineBrandModalOpen] = useState(false);
   const [customBrand, setCustomBrand] = useState('');
   const [department, setDepartment] = useState<string>('tenis');
   const [subcategory, setSubcategory] = useState('');
@@ -323,6 +330,12 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
     if (productToEdit) {
       setName(productToEdit.name);
       setBrand(productToEdit.brand);
+      if (productToEdit.brandId) {
+        setSelectedBrandId(productToEdit.brandId);
+      } else {
+        const found = availableBrands.find(b => b.name.toLowerCase() === productToEdit.brand?.toLowerCase());
+        setSelectedBrandId(found ? found.id : '');
+      }
       setDepartment(productToEdit.department || 'tenis');
       setSubcategory(productToEdit.subcategory || '');
       setCategory(productToEdit.category || 'hype');
@@ -350,7 +363,14 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
       setImageErrorMessage('');
     } else {
       setName('');
-      setBrand('NIKE');
+      const defaultB = availableBrands.find(b => b.id === 'nike') || availableBrands[0];
+      if (defaultB) {
+        setSelectedBrandId(defaultB.id);
+        setBrand(defaultB.name);
+      } else {
+        setSelectedBrandId('');
+        setBrand('Nike');
+      }
       setCustomBrand('');
       setDepartment('tenis');
       setSubcategory('Sneakers');
@@ -475,8 +495,11 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
         }
       }
 
-      const finalBrand = brand === 'OTHER' ? (customBrand.trim().toUpperCase() || 'KICKS CLUB') : brand;
-      const generatedId = productToEdit?.id || `kc-${department}-${finalBrand.toLowerCase().replace(/[^a-z0-9]/g, '')}-${Date.now().toString(36)}`;
+      const chosenBrand = availableBrands.find(b => b.id === selectedBrandId) || 
+                          availableBrands.find(b => b.name.toLowerCase() === brand.toLowerCase());
+      const finalBrandName = chosenBrand ? chosenBrand.name : (brand === 'OTHER' ? (customBrand.trim() || 'KICKS CLUB') : brand);
+      const finalBrandId = chosenBrand ? chosenBrand.id : (selectedBrandId || undefined);
+      const generatedId = productToEdit?.id || `kc-${department}-${finalBrandName.toLowerCase().replace(/[^a-z0-9]/g, '')}-${Date.now().toString(36)}`;
 
       const finalGalleryList = [
         finalMainImage,
@@ -495,7 +518,9 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
       const savedProduct: Sneaker = {
         id: generatedId,
         name: name.trim().toUpperCase(),
-        brand: finalBrand,
+        brand: finalBrandName,
+        brandId: finalBrandId,
+        brandLogo: chosenBrand?.logoUrl,
         category,
         department,
         subcategory: subcategory.trim() || undefined,
@@ -632,29 +657,47 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-neutral-300 mb-1.5 font-condensed">
-                Marca / Designer *
-              </label>
-              <select
-                value={brand}
-                onChange={(e) => setBrand(e.target.value)}
-                className="w-full px-3 py-2.5 bg-black border border-neutral-700 rounded-xl text-sm text-white focus:outline-none focus:border-[#FFDD00]"
-              >
-                {DEFAULT_BRANDS.map((b) => (
-                  <option key={b} value={b}>{b}</option>
-                ))}
-                <option value="OTHER">+ Outra Marca Personalizada...</option>
-              </select>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-black uppercase tracking-wider text-neutral-300 font-condensed">
+                  Marca / Fabricante *
+                </label>
+                {onCreateBrand && (
+                  <button
+                    type="button"
+                    onClick={() => setIsInlineBrandModalOpen(true)}
+                    className="text-[11px] font-bold text-[#FFDD00] hover:underline inline-flex items-center gap-1"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>+ Nova Marca</span>
+                  </button>
+                )}
+              </div>
 
-              {brand === 'OTHER' && (
-                <input
-                  type="text"
-                  value={customBrand}
-                  onChange={(e) => setCustomBrand(e.target.value)}
-                  placeholder="Digita a marca..."
-                  className="mt-2 w-full px-3 py-1.5 bg-black border border-neutral-700 rounded-lg text-xs text-white"
-                />
-              )}
+              <select
+                value={selectedBrandId || (availableBrands.find(b => b.name.toLowerCase() === brand.toLowerCase())?.id || '')}
+                onChange={(e) => {
+                  const bId = e.target.value;
+                  setSelectedBrandId(bId);
+                  const bObj = availableBrands.find((b) => b.id === bId);
+                  if (bObj) {
+                    setBrand(bObj.name);
+                  }
+                }}
+                className="w-full px-3 py-2.5 bg-black border border-neutral-700 rounded-xl text-sm text-white focus:outline-none focus:border-[#FFDD00]"
+                required
+              >
+                {availableBrands.length > 0 ? (
+                  availableBrands.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))
+                ) : (
+                  DEFAULT_BRANDS.map((b) => (
+                    <option key={b} value={b.toLowerCase()}>{b}</option>
+                  ))
+                )}
+              </select>
             </div>
           </div>
 
@@ -1417,6 +1460,20 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
         </div>
 
       </div>
+
+      {onCreateBrand && (
+        <AddEditBrandModal
+          isOpen={isInlineBrandModalOpen}
+          onClose={() => setIsInlineBrandModalOpen(false)}
+          onSave={async (newBrand) => {
+            await onCreateBrand(newBrand);
+            if (newBrand.id) {
+              setSelectedBrandId(newBrand.id);
+              setBrand(newBrand.name);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

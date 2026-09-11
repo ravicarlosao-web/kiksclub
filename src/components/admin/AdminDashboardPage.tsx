@@ -31,11 +31,12 @@ import {
   Layers,
   Ticket
 } from 'lucide-react';
-import { Sneaker, Order, OrderStatus, AdminUser, StoreCategory } from '../../types';
+import { Sneaker, Order, OrderStatus, AdminUser, StoreCategory, Brand } from '../../types';
 import { AddEditProductModal } from './AddEditProductModal';
 import { OrderDetailsModal } from './OrderDetailsModal';
 import { CategoryManagementTab } from './CategoryManagementTab';
 import { AddEditCategoryModal } from './AddEditCategoryModal';
+import { BrandsManagementTab } from './BrandsManagementTab';
 import { CouponsManagementTab } from './CouponsManagementTab';
 import { AdminChangePasswordSection } from './AdminChangePasswordSection';
 
@@ -44,6 +45,7 @@ interface AdminDashboardPageProps {
   products: Sneaker[];
   orders: Order[];
   categories: StoreCategory[];
+  brands?: Brand[];
   onAddProduct: (product: Sneaker) => void;
   onUpdateProduct: (product: Sneaker) => void;
   onDeleteProduct: (productId: string) => void;
@@ -51,6 +53,10 @@ interface AdminDashboardPageProps {
   onUpdateCategory: (category: StoreCategory) => void;
   onDeleteCategory: (categoryId: string) => void;
   onResetCategories: () => void;
+  onAddBrand?: (brand: Omit<Brand, 'id' | 'createdAt'>) => Promise<Brand | null>;
+  onUpdateBrand?: (id: string, updates: Partial<Brand>) => Promise<Brand | null>;
+  onDeleteBrand?: (id: string, options?: { reassignTo?: string; force?: boolean }) => Promise<boolean>;
+  onRefreshBrands?: () => Promise<void>;
   onUpdateOrderStatus: (orderId: string, status: OrderStatus) => void;
   onUpdateOrderTracking: (orderId: string, trackingCode: string) => void;
   onDeleteOrder: (orderId: string) => void;
@@ -61,13 +67,14 @@ interface AdminDashboardPageProps {
   onAnonymizeCustomer?: (orderId: string) => void;
 }
 
-type TabType = 'overview' | 'products' | 'categories' | 'coupons' | 'orders' | 'settings';
+type TabType = 'overview' | 'products' | 'categories' | 'brands' | 'coupons' | 'orders' | 'settings';
 
 export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   adminUser,
   products,
   orders,
   categories,
+  brands = [],
   onAddProduct,
   onUpdateProduct,
   onDeleteProduct,
@@ -75,6 +82,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   onUpdateCategory,
   onDeleteCategory,
   onResetCategories,
+  onAddBrand,
+  onUpdateBrand,
+  onDeleteBrand,
+  onRefreshBrands,
   onUpdateOrderStatus,
   onUpdateOrderTracking,
   onDeleteOrder,
@@ -385,6 +396,31 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                   : 'bg-neutral-800 text-neutral-300'
               }`}>
                 {categories.length}
+              </span>
+            </button>
+
+            {/* 3.1 Gerir Marcas */}
+            <button
+              onClick={() => {
+                setCurrentTab('brands');
+                setIsMobileSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${
+                currentTab === 'brands'
+                  ? 'bg-[#FFDD00] text-black font-black shadow-md shadow-[#FFDD00]/10'
+                  : 'text-neutral-300 hover:text-white hover:bg-neutral-900/90'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Tag className={`w-4 h-4 ${currentTab === 'brands' ? 'text-black' : 'text-[#FFDD00]'}`} />
+                <span>Gerir Marcas</span>
+              </div>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                currentTab === 'brands'
+                  ? 'bg-black text-[#FFDD00]'
+                  : 'bg-neutral-800 text-neutral-300'
+              }`}>
+                {brands.length}
               </span>
             </button>
 
@@ -1002,6 +1038,29 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           </div>
         )}
 
+        {/* TAB: GERIR MARCAS */}
+        {currentTab === 'brands' && (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <BrandsManagementTab
+              brands={brands}
+              products={products}
+              onAddBrand={onAddBrand ? async (brandData) => {
+                return await onAddBrand(brandData);
+              } : undefined}
+              onUpdateBrand={onUpdateBrand ? async (id, updates) => {
+                return await onUpdateBrand(id, updates);
+              } : undefined}
+              onDeleteBrand={onDeleteBrand ? async (id, options) => {
+                return await onDeleteBrand(id, options);
+              } : undefined}
+              onFilterBrandProducts={(brandName) => {
+                setProductBrandFilter(brandName);
+                setCurrentTab('products');
+              }}
+            />
+          </div>
+        )}
+
         {/* TAB 2.5: GERIR CUPÕES */}
         {currentTab === 'coupons' && (
           <div className="space-y-6 animate-in fade-in duration-300">
@@ -1339,6 +1398,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         }}
         productToEdit={productToEdit}
         availableCategories={categories}
+        availableBrands={brands}
+        onCreateBrand={onAddBrand}
       />
 
       {/* Category Add / Edit Modal */}

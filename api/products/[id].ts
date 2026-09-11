@@ -43,7 +43,9 @@ function rowToProduct(row: Record<string, unknown>) {
   return {
     id: row.id as string,
     name: row.name as string,
-    brand: row.brand as string,
+    brand: (row.brand_name || row.brand) as string,
+    brandId: (row.brand_id as string) || undefined,
+    brandLogo: (row.brand_logo as string) || undefined,
     category: row.category as string,
     department: row.department as string | undefined,
     subcategory: row.subcategory as string | undefined,
@@ -104,7 +106,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'GET') {
     try {
       const db = getDb();
-      const result = await db.execute({ sql: 'SELECT * FROM products WHERE id = ?', args: [id] });
+      const sql = `
+        SELECT p.*, b.name as brand_name, b.logo_url as brand_logo
+        FROM products p
+        LEFT JOIN brands b ON p.brand_id = b.id
+        WHERE p.id = ?
+      `;
+      const result = await db.execute({ sql, args: [id] });
       if (result.rows.length === 0) return jsonError(res, 404, 'Produto não encontrado');
       setCors(res);
       res.status(200).json(rowToProduct(result.rows[0] as Record<string, unknown>));
@@ -124,16 +132,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const db = getDb();
       const p = req.body;
 
+      let brandId = p.brandId || p.brand_id || null;
+      let brandName = p.brand || '';
+
+      if (brandId && !brandName) {
+        const bRes = await db.execute({ sql: 'SELECT name FROM brands WHERE id = ?', args: [brandId] });
+        if (bRes.rows.length > 0) brandName = bRes.rows[0].name as string;
+      } else if (!brandId && brandName) {
+        const bRes = await db.execute({ sql: 'SELECT id FROM brands WHERE LOWER(name) = LOWER(?)', args: [brandName] });
+        if (bRes.rows.length > 0) brandId = bRes.rows[0].id as string;
+      }
+
       await db.execute({
         sql: `UPDATE products SET
-          name = ?, brand = ?, category = ?, department = ?, subcategory = ?,
+          name = ?, brand = ?, brand_id = ?, category = ?, department = ?, subcategory = ?,
           price = ?, original_price = ?, discount_percentage = ?,
           image = ?, gallery = ?, sizes = ?, size_stock = ?, size_type = ?,
           in_stock = ?, featured = ?, tag = ?, description = ?, details = ?,
           updated_at = datetime('now')
           WHERE id = ?`,
         args: [
-          p.name, p.brand, p.category,
+          p.name, brandName, brandId, p.category,
           p.department ?? null, p.subcategory ?? null,
           p.price, p.originalPrice ?? p.price, p.discountPercentage ?? 0,
           p.image,
@@ -150,7 +169,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ],
       });
 
-      const updated = await db.execute({ sql: 'SELECT * FROM products WHERE id = ?', args: [id] });
+      const updated = await db.execute({
+        sql: `SELECT p.*, b.name as brand_name, b.logo_url as brand_logo
+              FROM products p
+              LEFT JOIN brands b ON p.brand_id = b.id
+              WHERE p.id = ?`,
+        args: [id],
+      });
       if (updated.rows.length === 0) return jsonError(res, 404, 'Produto não encontrado');
       setCors(res);
       res.status(200).json(rowToProduct(updated.rows[0] as Record<string, unknown>));

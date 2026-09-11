@@ -13,10 +13,21 @@ export interface StoreCategory {
   isActive?: boolean;
 }
 
+export interface Brand {
+  id: string;
+  name: string;
+  logoUrl?: string;
+  description?: string;
+  productCount?: number;
+  createdAt?: string;
+}
+
 export interface Sneaker {
   id: string;
   name: string;
   brand: string;
+  brandId?: string;
+  brandLogo?: string;
   category: 'louis-vuitton' | 'nike' | 'jordan' | 'yeezy' | 'balenciaga' | 'hype' | 'casual' | string;
   department?: DepartmentKey;
   subcategory?: string;

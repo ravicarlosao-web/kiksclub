@@ -19,6 +19,7 @@ import { ToastContainer } from './components/ToastNotification';
 import { Sneaker, CartItem, AdminUser, StoreCategory, ToastMessage } from './types';
 import { useProducts } from './hooks/useProducts';
 import { useCategories } from './hooks/useCategories';
+import { useBrands } from './hooks/useBrands';
 import { useOrders } from './hooks/useOrders';
 import { Search, Sparkles, X, Filter, ArrowUpDown, Loader2 } from 'lucide-react';
 import { ProductCard } from './components/ProductCard';
@@ -61,6 +62,14 @@ export default function App() {
     updateCategory,
     deleteCategory,
   } = useCategories();
+
+  const {
+    brands,
+    createBrand,
+    updateBrand,
+    deleteBrand,
+    refetch: fetchBrands,
+  } = useBrands();
 
   const {
     orders,
@@ -507,6 +516,7 @@ export default function App() {
         products={products}
         orders={orders}
         categories={categories}
+        brands={brands}
         onAddProduct={handleAddProduct}
         onUpdateProduct={handleUpdateProduct}
         onDeleteProduct={handleDeleteProduct}
@@ -514,6 +524,10 @@ export default function App() {
         onUpdateCategory={handleUpdateCategory}
         onDeleteCategory={handleDeleteCategory}
         onResetCategories={() => {}}
+        onAddBrand={createBrand}
+        onUpdateBrand={updateBrand}
+        onDeleteBrand={deleteBrand}
+        onRefreshBrands={fetchBrands}
         onUpdateOrderStatus={handleUpdateOrderStatus}
         onUpdateOrderTracking={handleUpdateOrderTracking}
         onDeleteOrder={handleDeleteOrder}
