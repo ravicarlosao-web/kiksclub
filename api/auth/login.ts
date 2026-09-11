@@ -2,7 +2,69 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@libsql/client/http';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { captureBackendException, captureSecurityEvent } from '../../lib/sentry';
+
+function logSecurityEvent(message: string, context?: Record<string, any>) {
+  console.warn('[Security Event]', message, context);
+  const dsn = (process.env.SENTRY_DSN || '').trim();
+  if (!dsn) return;
+  try {
+    const url = new URL(dsn);
+    const key = url.username;
+    const host = url.host;
+    const projectId = url.pathname.replace(/^\//, '');
+    if (!key || !host || !projectId) return;
+    fetch(`https://${host}/api/${projectId}/store/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Sentry-Auth': `Sentry sentry_version=7, sentry_client=kicksclub/1.0, sentry_key=${key}`,
+      },
+      body: JSON.stringify({
+        event_id: Math.random().toString(36).substring(2, 18),
+        timestamp: new Date().toISOString().replace('Z', ''),
+        platform: 'node',
+        level: 'warning',
+        message,
+        environment: process.env.VERCEL_ENV || 'production',
+        extra: context,
+      }),
+    }).catch(() => {});
+  } catch {
+    // ignore
+  }
+}
+
+function logBackendError(error: any, context?: Record<string, any>) {
+  console.error('[Backend Error]', error, context);
+  const dsn = (process.env.SENTRY_DSN || '').trim();
+  if (!dsn) return;
+  try {
+    const url = new URL(dsn);
+    const key = url.username;
+    const host = url.host;
+    const projectId = url.pathname.replace(/^\//, '');
+    if (!key || !host || !projectId) return;
+    fetch(`https://${host}/api/${projectId}/store/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Sentry-Auth': `Sentry sentry_version=7, sentry_client=kicksclub/1.0, sentry_key=${key}`,
+      },
+      body: JSON.stringify({
+        event_id: Math.random().toString(36).substring(2, 18),
+        timestamp: new Date().toISOString().replace('Z', ''),
+        platform: 'node',
+        level: 'error',
+        message: error?.message || String(error),
+        environment: process.env.VERCEL_ENV || 'production',
+        extra: context,
+      }),
+    }).catch(() => {});
+  } catch {
+    // ignore
+  }
+}
+
 function getJwtSecret(): string {
   const secret = (process.env.JWT_SECRET || '').trim();
   if (!secret || secret.length < 32) {
@@ -61,7 +123,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     if (result.rows.length === 0) {
-      captureSecurityEvent('Tentativa de login falhada — utilizador não encontrado', { email: String(email).trim().toLowerCase() });
+      logSecurityEvent('Tentativa de login falhada — utilizador não encontrado', { email: String(email).trim().toLowerCase() });
       await new Promise((r) => setTimeout(r, 400));
       return jsonError(req, res, 401, 'Credenciais inválidas');
     }
@@ -70,7 +132,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const isValid = await bcrypt.compare(String(password), user.password_hash as string);
 
     if (!isValid) {
-      captureSecurityEvent('Tentativa de login falhada — password incorreta', { email: String(email).trim().toLowerCase() });
+      logSecurityEvent('Tentativa de login falhada — password incorreta', { email: String(email).trim().toLowerCase() });
       return jsonError(req, res, 401, 'Credenciais inválidas');
     }
 
@@ -110,7 +172,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (err: any) {
     console.error('[POST /api/auth/login]', err);
-    captureBackendException(err, { endpoint: '/api/auth/login' });
+    logBackendError(err, { endpoint: '/api/auth/login' });
     jsonError(req, res, 500, `Erro no servidor de autenticação: ${err.message}`);
   }
 }

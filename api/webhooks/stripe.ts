@@ -1,13 +1,74 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 import { createClient } from '@libsql/client/http';
-import { captureBackendException, captureSecurityEvent } from '../../lib/sentry';
 
 export const config = {
   api: {
     bodyParser: false,
   },
 };
+
+function logSecurityEvent(message: string, context?: Record<string, any>) {
+  console.warn('[Security Event]', message, context);
+  const dsn = (process.env.SENTRY_DSN || '').trim();
+  if (!dsn) return;
+  try {
+    const url = new URL(dsn);
+    const key = url.username;
+    const host = url.host;
+    const projectId = url.pathname.replace(/^\//, '');
+    if (!key || !host || !projectId) return;
+    fetch(`https://${host}/api/${projectId}/store/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Sentry-Auth': `Sentry sentry_version=7, sentry_client=kicksclub/1.0, sentry_key=${key}`,
+      },
+      body: JSON.stringify({
+        event_id: Math.random().toString(36).substring(2, 18),
+        timestamp: new Date().toISOString().replace('Z', ''),
+        platform: 'node',
+        level: 'warning',
+        message,
+        environment: process.env.VERCEL_ENV || 'production',
+        extra: context,
+      }),
+    }).catch(() => {});
+  } catch {
+    // ignore
+  }
+}
+
+function logBackendError(error: any, context?: Record<string, any>) {
+  console.error('[Backend Error]', error, context);
+  const dsn = (process.env.SENTRY_DSN || '').trim();
+  if (!dsn) return;
+  try {
+    const url = new URL(dsn);
+    const key = url.username;
+    const host = url.host;
+    const projectId = url.pathname.replace(/^\//, '');
+    if (!key || !host || !projectId) return;
+    fetch(`https://${host}/api/${projectId}/store/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Sentry-Auth': `Sentry sentry_version=7, sentry_client=kicksclub/1.0, sentry_key=${key}`,
+      },
+      body: JSON.stringify({
+        event_id: Math.random().toString(36).substring(2, 18),
+        timestamp: new Date().toISOString().replace('Z', ''),
+        platform: 'node',
+        level: 'error',
+        message: error?.message || String(error),
+        environment: process.env.VERCEL_ENV || 'production',
+        extra: context,
+      }),
+    }).catch(() => {});
+  } catch {
+    // ignore
+  }
+}
 
 async function getRawBody(req: any): Promise<Buffer> {
   if (Buffer.isBuffer(req.body)) return req.body;
@@ -34,20 +95,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (!stripeKey) {
     console.error('[Stripe Webhook] STRIPE_SECRET_KEY não configurada no servidor.');
-    captureBackendException(new Error('STRIPE_SECRET_KEY não configurada no servidor'));
+    logBackendError(new Error('STRIPE_SECRET_KEY não configurada no servidor'));
     return res.status(500).send('STRIPE_SECRET_KEY não configurada no servidor.');
   }
 
   // 1. Assinatura e Segredo OBRIGATÓRIOS (Prevenção de Falsificação de Eventos / Spoofing)
   if (!webhookSecret) {
     console.error('[Stripe Webhook] STRIPE_WEBHOOK_SECRET ausente. Não é seguro processar sem validação de assinatura.');
-    captureBackendException(new Error('STRIPE_WEBHOOK_SECRET ausente no servidor'));
+    logBackendError(new Error('STRIPE_WEBHOOK_SECRET ausente no servidor'));
     return res.status(500).send('STRIPE_WEBHOOK_SECRET não configurada no servidor.');
   }
 
   if (!sig) {
     console.warn('[Stripe Webhook] Rejeitado: Cabeçalho stripe-signature ausente.');
-    captureSecurityEvent('Webhook Stripe recebido sem cabeçalho stripe-signature');
+    logSecurityEvent('Webhook Stripe recebido sem cabeçalho stripe-signature');
     return res.status(400).send('Assinatura de webhook ausente.');
   }
 
@@ -62,7 +123,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('[Stripe Webhook] Assinatura verificada com sucesso! Evento:', event.type);
   } catch (err: any) {
     console.error(`[Stripe Webhook Signature Error]: ${err.message}`);
-    captureSecurityEvent('Falha de verificação da assinatura criptográfica Stripe', { error: err.message });
+    logSecurityEvent('Falha de verificação da assinatura criptográfica Stripe', { error: err.message });
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
@@ -146,7 +207,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
         } catch (dbErr: any) {
           console.error('[Stripe Webhook] Erro na BD Turso:', dbErr.message);
-          captureBackendException(dbErr, { endpoint: '/api/webhooks/stripe', orderId });
+          logBackendError(dbErr, { endpoint: '/api/webhooks/stripe', orderId });
           return res.status(500).json({ error: 'Erro de base de dados no webhook' });
         }
       }
