@@ -1,0 +1,5 @@
+fix(auth): substituir SDK pesado Sentry por cliente HTTP nativo para evitar FUNCTION_INVOCATION_FAILED na Vercel
+
+- Remover @sentry/node cujas dependencias de OpenTelemetry provocavam falhas de boot no runtime serverless
+- Implementar cliente HTTP direto para Sentry Store API em lib/sentry.ts sem dependencias externas
+- Adicionar parsing seguro de respostas de erro em AdminLoginPage.tsx

@@ -39,10 +39,20 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
         body: JSON.stringify({ email: cleanEmail, password: cleanPass }),
       });
 
-      const data = await res.json();
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch {
+        // Ignora se não for JSON válido
+      }
 
       if (!res.ok) {
-        setError(data.error || 'Credenciais inválidas. Verifica o e-mail e a palavra-passe.');
+        setError(data?.error || `Erro no servidor de autenticação (${res.status}). Por favor tenta novamente.`);
+        return;
+      }
+
+      if (!data?.user) {
+        setError('Resposta inválida do servidor. Por favor tenta novamente.');
         return;
       }
 
