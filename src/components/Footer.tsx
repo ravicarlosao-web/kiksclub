@@ -14,6 +14,7 @@ import {
   MessageCircle, 
   Mail, 
   Clock, 
+  Lock,
   ChevronDown,
   Layers
 } from 'lucide-react';
