@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@libsql/client/http';
+import { testHelper } from './_test_helper';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -19,6 +20,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const checks: Record<string, string> = {
     runtime: 'ok',
+    helper: testHelper(),
     timestamp: new Date().toISOString(),
     node: process.version,
     turso_url: url ? '✅ definida' : '❌ em falta',
@@ -41,22 +43,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   } else {
     checks.database = '❌ credenciais em falta';
-  }
-
-  // Diagnostic tests for imports
-  for (const [name, path] of [
-    ['import_db', '../lib/db'],
-    ['import_apiHelpers', '../lib/apiHelpers'],
-    ['import_auth', '../lib/auth'],
-    ['import_jwt', 'jsonwebtoken'],
-    ['import_bcryptjs', 'bcryptjs'],
-  ]) {
-    try {
-      await import(path);
-      checks[name] = '✅ ok';
-    } catch (e: any) {
-      checks[name] = `❌ ${e.message}`;
-    }
   }
 
   const allOk = !Object.values(checks).some((v) => String(v).startsWith('❌'));
