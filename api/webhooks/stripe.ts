@@ -31,36 +31,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const webhookSecret = (process.env.STRIPE_WEBHOOK_SECRET || '').trim();
   const sig = req.headers['stripe-signature'] as string;
 
-  console.log('[Stripe Webhook] STRIPE_SECRET_KEY prefix:', stripeKey ? stripeKey.substring(0, 8) + '...' : 'UNDEFINED');
-  console.log('[Stripe Webhook] STRIPE_WEBHOOK_SECRET prefix:', webhookSecret ? webhookSecret.substring(0, 8) + '...' : 'UNDEFINED');
-  console.log('[Stripe Webhook] stripe-signature header present:', Boolean(sig));
+  if (!stripeKey) {
+    console.error('[Stripe Webhook] STRIPE_SECRET_KEY não configurada no servidor.');
+    return res.status(500).send('STRIPE_SECRET_KEY não configurada no servidor.');
+  }
+
+  // 1. Assinatura e Segredo OBRIGATÓRIOS (Prevenção de Falsificação de Eventos / Spoofing)
+  if (!webhookSecret) {
+    console.error('[Stripe Webhook] STRIPE_WEBHOOK_SECRET ausente. Não é seguro processar sem validação de assinatura.');
+    return res.status(500).send('STRIPE_WEBHOOK_SECRET não configurada no servidor.');
+  }
+
+  if (!sig) {
+    console.warn('[Stripe Webhook] Rejeitado: Cabeçalho stripe-signature ausente.');
+    return res.status(400).send('Assinatura de webhook ausente.');
+  }
 
   let event: Stripe.Event;
 
   try {
     const rawBody = await getRawBody(req);
-
-    if (!stripeKey) {
-      console.error('[Stripe Webhook] STRIPE_SECRET_KEY ausente.');
-      return res.status(500).send('STRIPE_SECRET_KEY não configurada no Vercel.');
-    }
-
     const stripe = new Stripe(stripeKey, { typescript: true });
 
-    if (webhookSecret && sig) {
-      event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
-      console.log('[Stripe Webhook] Assinatura verificada com sucesso! Evento:', event.type);
-    } else {
-      // Se webhook secret ainda não estiver configurado
-      console.warn('[Stripe Webhook] Atenção: A processar evento sem validação de assinatura (STRIPE_WEBHOOK_SECRET ou assinatura ausente)');
-      event = JSON.parse(rawBody.toString('utf8')) as Stripe.Event;
-    }
+    // Validação criptográfica rigorosa com tolerância padrão da Stripe
+    event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
+    console.log('[Stripe Webhook] Assinatura verificada com sucesso! Evento:', event.type);
   } catch (err: any) {
     console.error(`[Stripe Webhook Signature Error]: ${err.message}`);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // ── Evento: Pagamento concluído com sucesso ─────────────────
+  // 2. Evento: Pagamento concluído com sucesso
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
     const orderId = session.metadata?.orderId;
@@ -68,14 +69,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log(`[Stripe Webhook] checkout.session.completed para orderId: ${orderId}`);
 
     if (orderId) {
-      const dbUrl = (process.env.TURSO_DATABASE_URL || '').trim();
+      const dbUrl = (process.env.TURSO_DATABASE_URL || '').trim().replace(/^libsql:\/\//, 'https://');
       const dbToken = (process.env.TURSO_AUTH_TOKEN || '').trim();
 
       if (dbUrl && dbToken) {
         try {
           const db = createClient({ url: dbUrl, authToken: dbToken });
 
-          // 1. Atualizar status da encomenda para 'Confirmada'
+          // 3. Verificação de Idempotência (Prevenção de Duplo Processamento / Replay)
+          const checkRes = await db.execute({
+            sql: 'SELECT status, items FROM orders WHERE id = ?',
+            args: [orderId],
+          });
+
+          if (checkRes.rows.length === 0) {
+            console.warn(`[Stripe Webhook] Encomenda ${orderId} não encontrada na BD.`);
+            return res.status(200).json({ received: true, warning: 'Encomenda não encontrada' });
+          }
+
+          const currentStatus = String(checkRes.rows[0].status || '');
+          if (currentStatus === 'Confirmada' || currentStatus === 'Pago' || currentStatus === 'Concluído') {
+            console.log(`[Stripe Webhook] Idempotência: Encomenda ${orderId} já se encontra paga (${currentStatus}).`);
+            return res.status(200).json({ received: true, already_processed: true });
+          }
+
+          // 4. Atualizar status da encomenda para 'Confirmada'
           await db.execute({
             sql: `UPDATE orders SET
               status = 'Confirmada',
@@ -84,43 +102,46 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             args: [orderId],
           });
 
-          console.log(`[Stripe Webhook] Encomenda ${orderId} atualizada para 'Confirmada' no Turso!`);
+          console.log(`[Stripe Webhook] Encomenda ${orderId} atualizada para 'Confirmada' no Turso.`);
 
-          // 2. Decrementar o stock
-          const orderRes = await db.execute({
-            sql: 'SELECT items FROM orders WHERE id = ?',
-            args: [orderId],
-          });
-
-          if (orderRes.rows.length > 0) {
-            const itemsStr = orderRes.rows[0].items as string;
+          // 5. Decrementar o stock com segurança
+          const itemsStr = checkRes.rows[0].items as string;
+          if (itemsStr) {
             try {
               const items = JSON.parse(itemsStr);
               for (const item of items) {
+                const pId = item.productId || item.id;
+                if (!pId) continue;
+
                 const prodRes = await db.execute({
                   sql: 'SELECT size_stock FROM products WHERE id = ?',
-                  args: [item.productId],
+                  args: [pId],
                 });
 
                 if (prodRes.rows.length > 0) {
                   const stockMap = JSON.parse((prodRes.rows[0].size_stock as string) || '{}');
                   const sizeKey = String(item.size);
-                  stockMap[sizeKey] = Math.max(0, (stockMap[sizeKey] ?? 2) - Number(item.quantity));
+                  const currentItemStock = Number(stockMap[sizeKey] ?? 0);
+                  const qtyToDeduct = Number(item.quantity || 1);
+
+                  stockMap[sizeKey] = Math.max(0, currentItemStock - qtyToDeduct);
                   const totalStock = (Object.values(stockMap) as number[]).reduce((a, b) => Number(a) + Number(b), 0);
 
                   await db.execute({
                     sql: 'UPDATE products SET size_stock = ?, in_stock = ? WHERE id = ?',
-                    args: [JSON.stringify(stockMap), totalStock > 0 ? 1 : 0, item.productId],
+                    args: [JSON.stringify(stockMap), totalStock > 0 ? 1 : 0, pId],
                   });
-                  console.log(`[Stripe Webhook] Stock decrementado para produto ${item.productId}, tamanho ${sizeKey}`);
+
+                  console.log(`[Stripe Webhook] Stock decrementado para produto ${pId}, tamanho ${sizeKey}`);
                 }
               }
             } catch (stockErr: any) {
-              console.warn('[Stripe Webhook] Erro ao calcular stock:', stockErr.message);
+              console.warn('[Stripe Webhook] Erro ao decrementar stock:', stockErr.message);
             }
           }
         } catch (dbErr: any) {
           console.error('[Stripe Webhook] Erro na BD Turso:', dbErr.message);
+          return res.status(500).json({ error: 'Erro de base de dados no webhook' });
         }
       }
     }

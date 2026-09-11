@@ -69,9 +69,13 @@ function requireAuth(req: VercelRequest, res: VercelResponse) {
     return null;
   }
   const token = authHeader.slice(7).trim();
+  const secret = (process.env.JWT_SECRET || '').trim();
+  if (!secret || secret.length < 32) {
+    res.status(500).json({ error: 'Configuração de segurança JWT ausente no servidor' });
+    return null;
+  }
   try {
-    const secret = process.env.JWT_SECRET || 'fallback-dev-secret-change-in-production!';
-    return jwt.verify(token, secret);
+    return jwt.verify(token, secret, { algorithms: ['HS256'] });
   } catch {
     res.status(401).json({ error: 'Não autorizado — token inválido ou expirado' });
     return null;

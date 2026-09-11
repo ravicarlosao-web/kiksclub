@@ -2,9 +2,13 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@libsql/client/http';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-dev-secret-change-in-production!';
-
+function getJwtSecret(): string {
+  const secret = (process.env.JWT_SECRET || '').trim();
+  if (!secret || secret.length < 32) {
+    throw new Error('JWT_SECRET não está configurada ou é insegura (mínimo 32 caracteres).');
+  }
+  return secret;
+}
 function setCors(res: VercelResponse): void {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -71,7 +75,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       args: [user.id as string],
     });
 
-    // Assinar JWT
+    // Assinar JWT com HS256 estrito
     const token = jwt.sign(
       {
         id: user.id as string,
@@ -79,8 +83,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         name: user.name as string,
         role: (user.role as string) || 'admin',
       },
-      JWT_SECRET,
-      { expiresIn: '7d' }
+      getJwtSecret(),
+      { algorithm: 'HS256', expiresIn: '7d' }
     );
 
     setCors(res);

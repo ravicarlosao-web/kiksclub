@@ -61,21 +61,27 @@ function rowToOrder(row: Record<string, unknown>) {
   };
 }
 
+function checkAdmin(req: VercelRequest): any | null {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+  const token = authHeader.slice(7).trim();
+  const secret = (process.env.JWT_SECRET || '').trim();
+  if (!secret || secret.length < 32) return null;
+  try {
+    return jwt.verify(token, secret, { algorithms: ['HS256'] });
+  } catch {
+    return null;
+  }
+}
+
 function requireAuth(req: VercelRequest, res: VercelResponse) {
   setCors(res);
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    res.status(401).json({ error: 'Não autorizado — token em falta' });
+  const admin = checkAdmin(req);
+  if (!admin) {
+    res.status(401).json({ error: 'Não autorizado — token de administrador inválido ou ausente' });
     return null;
   }
-  const token = authHeader.slice(7).trim();
-  try {
-    const secret = process.env.JWT_SECRET || 'fallback-dev-secret-change-in-production!';
-    return jwt.verify(token, secret);
-  } catch {
-    res.status(401).json({ error: 'Não autorizado — token inválido ou expirado' });
-    return null;
-  }
+  return admin;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -83,16 +89,49 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { id } = req.query as { id: string };
 
-  if (!id) return jsonError(res, 400, 'ID em falta');
+  if (!id) return jsonError(res, 400, 'ID de encomenda em falta');
+
+  const cleanId = String(id).trim().toUpperCase();
 
   // ── GET /api/orders/:id ────────────────────────────────────────
   if (req.method === 'GET') {
     try {
       const db = getDb();
-      const result = await db.execute({ sql: 'SELECT * FROM orders WHERE id = ?', args: [id] });
+      const result = await db.execute({
+        sql: 'SELECT * FROM orders WHERE UPPER(id) = ? OR UPPER(tracking_code) = ? LIMIT 1',
+        args: [cleanId, cleanId],
+      });
+
       if (result.rows.length === 0) return jsonError(res, 404, 'Encomenda não encontrada');
+
+      const fullOrder = rowToOrder(result.rows[0] as Record<string, unknown>);
+      const admin = checkAdmin(req);
+
       setCors(res);
-      res.status(200).json(rowToOrder(result.rows[0] as Record<string, unknown>));
+
+      // 1. Administrador autenticado recebe todos os dados da encomenda
+      if (admin) {
+        return res.status(200).json(fullOrder);
+      }
+
+      // 2. Consulta pública (Anti-IDOR / Proteção RGPD): Remove todos os dados PII privados
+      //    (Nome completo, telefone, e-mail, morada exata, código postal, notas e valores monetários)
+      const sanitizedTracking = {
+        id: fullOrder.id,
+        trackingCode: fullOrder.trackingCode,
+        status: fullOrder.status,
+        city: fullOrder.city,
+        createdAt: fullOrder.createdAt,
+        items: (fullOrder.items || []).map((it: any) => ({
+          name: it.name,
+          brand: it.brand,
+          size: it.size,
+          quantity: it.quantity,
+          image: it.image,
+        })),
+      };
+
+      return res.status(200).json(sanitizedTracking);
     } catch (err: any) {
       console.error('[GET /api/orders/:id]', err);
       jsonError(res, 500, `Erro ao carregar encomenda: ${err.message}`);
@@ -101,7 +140,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // ── PATCH /api/orders/:id ──────────────────────────────────────
-  if (req.method === 'PATCH') {
+  if (req.method === 'PATCH' || req.method === 'PUT') {
     const admin = requireAuth(req, res);
     if (!admin) return;
 
@@ -109,7 +148,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const db = getDb();
       const { status, trackingCode } = req.body as { status?: string; trackingCode?: string };
 
-      if (!status && !trackingCode) {
+      if (!status && trackingCode === undefined) {
         return jsonError(res, 400, 'Pelo menos status ou trackingCode devem ser fornecidos');
       }
 
@@ -118,21 +157,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (status) {
         sets.push('status = ?');
-        args.push(status);
+        args.push(String(status).trim());
       }
       if (trackingCode !== undefined) {
         sets.push('tracking_code = ?');
-        args.push(trackingCode);
+        args.push(String(trackingCode).trim());
       }
 
-      args.push(id);
+      args.push(cleanId);
 
       await db.execute({
-        sql: `UPDATE orders SET ${sets.join(', ')} WHERE id = ?`,
+        sql: `UPDATE orders SET ${sets.join(', ')} WHERE UPPER(id) = ?`,
         args,
       });
 
-      const updated = await db.execute({ sql: 'SELECT * FROM orders WHERE id = ?', args: [id] });
+      const updated = await db.execute({ sql: 'SELECT * FROM orders WHERE UPPER(id) = ?', args: [cleanId] });
       if (updated.rows.length === 0) return jsonError(res, 404, 'Encomenda não encontrada');
       setCors(res);
       res.status(200).json(rowToOrder(updated.rows[0] as Record<string, unknown>));
@@ -150,7 +189,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     try {
       const db = getDb();
-      await db.execute({ sql: 'DELETE FROM orders WHERE id = ?', args: [id] });
+      await db.execute({ sql: 'DELETE FROM orders WHERE UPPER(id) = ?', args: [cleanId] });
       setCors(res);
       res.status(200).json({ message: 'Encomenda eliminada com sucesso' });
     } catch (err: any) {

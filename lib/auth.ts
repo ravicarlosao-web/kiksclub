@@ -1,7 +1,14 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-dev-secret-change-in-production!';
+function getJwtSecret(): string {
+  const secret = (process.env.JWT_SECRET || '').trim();
+  if (!secret || secret.length < 32) {
+    throw new Error('JWT_SECRET não está configurada ou é demasiado curta (mínimo 32 caracteres).');
+  }
+  return secret;
+}
+
 const JWT_EXPIRES_IN = '7d';
 
 export interface JwtPayload {
@@ -11,14 +18,14 @@ export interface JwtPayload {
   role: 'admin' | 'manager';
 }
 
-/** Assina um JWT com o payload dado */
+/** Assina um JWT com o payload dado usando HS256 estrito */
 export function signToken(payload: JwtPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign(payload, getJwtSecret(), { algorithm: 'HS256', expiresIn: JWT_EXPIRES_IN });
 }
 
-/** Verifica e decodifica um JWT. Lança erro se inválido/expirado. */
+/** Verifica e decodifica um JWT usando HS256 estrito. Lança erro se inválido/expirado. */
 export function verifyToken(token: string): JwtPayload {
-  return jwt.verify(token, JWT_SECRET) as JwtPayload;
+  return jwt.verify(token, getJwtSecret(), { algorithms: ['HS256'] }) as JwtPayload;
 }
 
 /** Gera um hash bcrypt da password (salt rounds = 12) */
