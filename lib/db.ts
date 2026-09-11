@@ -100,5 +100,19 @@ export async function runMigrations(): Promise<void> {
       last_login TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )`,
+
+    // Cupões de Desconto
+    `CREATE TABLE IF NOT EXISTS coupons (
+      id TEXT PRIMARY KEY,
+      code TEXT UNIQUE NOT NULL,
+      discount_percent INTEGER NOT NULL,
+      discount_amount REAL DEFAULT 0,
+      min_order_value REAL DEFAULT 0,
+      max_uses INTEGER DEFAULT NULL,
+      used_count INTEGER DEFAULT 0,
+      is_active INTEGER DEFAULT 1,
+      expires_at TEXT DEFAULT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`,
   ], 'write');
 }

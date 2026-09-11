@@ -101,7 +101,7 @@ export const TrackingPage: React.FC<TrackingPageProps> = ({
     {
       title: 'Entrega Concluída',
       desc: 'Receção na morada com comprovativo de entrega assinado.',
-      time: isDelivered ? 'Entregue' : 'Previsão: 24h a 48h úteis',
+      time: isDelivered ? 'Entregue' : 'Previsão: 7 a 15 dias úteis',
       done: isDelivered,
       current: isDelivered,
     }
@@ -294,7 +294,7 @@ export const TrackingPage: React.FC<TrackingPageProps> = ({
               </div>
 
               <a
-                href={`https://wa.me/351934755363?text=Ol%C3%A1%20Kicks%20Club!%20Preciso%20de%20ajuda%20com%20o%20rastreio%20do%20pedido%20${activeCode}.`}
+                href={`https://wa.me/244952948694?text=Ol%C3%A1%20Kicks%20Club!%20Preciso%20de%20ajuda%20com%20o%20rastreio%20do%20pedido%20${activeCode}.`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full sm:w-auto px-5 py-2.5 bg-black hover:bg-neutral-800 text-[#FFDD00] font-black text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-colors shadow-xs"

@@ -114,8 +114,8 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onNavigate
               privacidade@kicksclub.pt
             </a>{' '}
             ou pelo e-mail geral{' '}
-            <a href="mailto:geral@kicksclub.pt" className="text-[#FFDD00] font-bold underline hover:text-[#FFE838]">
-              geral@kicksclub.pt
+            <a href="mailto:kicksclub9@gmail.com" className="text-[#FFDD00] font-bold underline hover:text-[#FFE838]">
+              kicksclub9@gmail.com
             </a>.
           </p>
         </div>

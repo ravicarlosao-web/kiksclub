@@ -44,7 +44,7 @@ export const HelpFaqModal: React.FC<HelpFaqModalProps> = ({ isOpen, onClose }) =
         {/* Quick Contact Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
           <a
-            href="https://wa.me/351934755363?text=Ol%C3%A1%20Kicks%20Club!%20Gostaria%20de%20ajuda%20com%20uma%20encomenda."
+            href="https://wa.me/244952948694?text=Ol%C3%A1%20Kicks%20Club!%20Gostaria%20de%20ajuda%20com%20uma%20encomenda."
             target="_blank"
             rel="noopener noreferrer"
             className="p-4 rounded-2xl bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors flex items-center gap-3"
@@ -54,12 +54,12 @@ export const HelpFaqModal: React.FC<HelpFaqModalProps> = ({ isOpen, onClose }) =
             </div>
             <div>
               <span className="text-[10px] font-bold uppercase text-amber-800 block">WhatsApp Oficial</span>
-              <span className="text-sm font-black text-amber-950">+351 934 755 363</span>
+              <span className="text-sm font-black text-amber-950">+244 952 948 694</span>
             </div>
           </a>
 
           <a
-            href="mailto:geral@kicksclub.pt"
+            href="mailto:kicksclub9@gmail.com"
             className="p-4 rounded-2xl bg-neutral-100 border border-neutral-200 hover:bg-neutral-200/80 transition-colors flex items-center gap-3"
           >
             <div className="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center flex-shrink-0">
@@ -67,7 +67,7 @@ export const HelpFaqModal: React.FC<HelpFaqModalProps> = ({ isOpen, onClose }) =
             </div>
             <div>
               <span className="text-[10px] font-bold uppercase text-neutral-600 block">Apoio por Email</span>
-              <span className="text-sm font-black text-neutral-900">geral@kicksclub.pt</span>
+              <span className="text-sm font-black text-neutral-900">kicksclub9@gmail.com</span>
             </div>
           </a>
         </div>

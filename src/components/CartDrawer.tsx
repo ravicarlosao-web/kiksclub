@@ -57,6 +57,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 }) => {
   const [couponCode, setCouponCode] = useState('');
   const [discountApplied, setDiscountApplied] = useState(false);
+  const [discountPercent, setDiscountPercent] = useState(10);
   const [couponError, setCouponError] = useState('');
   const [step, setStep] = useState<'selection' | 'delivery' | 'success'>('selection');
   const [agreedPrivacy, setAgreedPrivacy] = useState(false);
@@ -110,17 +111,38 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     (acc, item) => acc + item.product.price * item.quantity, 
     0
   );
-  const discountAmount = discountApplied ? subtotal * 0.10 : 0;
+  const discountAmount = discountApplied ? (subtotal * discountPercent) / 100 : 0;
   const shippingCost = 0; // Free express shipping
   const total = Math.max(0, subtotal - discountAmount + shippingCost);
 
-  const applyCoupon = () => {
+  const applyCoupon = async () => {
     const code = couponCode.trim().toUpperCase();
+    if (!code) return;
+    try {
+      const res = await fetch(`/api/coupons?code=${encodeURIComponent(code)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.valid) {
+          setDiscountPercent(Number(data.discountPercent) || 10);
+          setDiscountApplied(true);
+          setCouponError('');
+          return;
+        } else if (data.message) {
+          setCouponError(data.message);
+          setDiscountApplied(false);
+          return;
+        }
+      }
+    } catch {
+      // offline fallback
+    }
     if (code === 'KICKS10' || code === 'STEP10' || code === 'CLUB10') {
+      setDiscountPercent(10);
       setDiscountApplied(true);
       setCouponError('');
     } else {
-      setCouponError('Cupão inválido. Usa KICKS10 para 10% OFF.');
+      setCouponError('Cupão inválido ou expirado.');
+      setDiscountApplied(false);
     }
   };
 
@@ -257,7 +279,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   {step === 'success' && 'Encomenda Confirmada!'}
                 </h2>
                 <span className="text-[10px] text-[#FFDD00] font-bold tracking-wider uppercase block">
-                  Envio Expresso CTT • Portugal 24/48h
+                  Envio Seguro • 7-15 dias úteis
                 </span>
               </div>
             </div>
@@ -440,7 +462,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       </span>
                       <span>•</span>
                       <span className="flex items-center gap-1">
-                        <span className="text-green-600">✓</span> Envio CTT 24/48h
+                        <span className="text-green-600">✓</span> Envio 7-15 dias úteis
                       </span>
                       <span>•</span>
                       <span className="flex items-center gap-1">
@@ -865,7 +887,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     {orderCode}
                   </span>
                   <span className="text-[11px] text-[#B45309] font-bold block pt-1">
-                    ⚡ Entrega estimada em 24/48 horas úteis
+                    ⚡ Entrega estimada em 7 a 15 dias úteis
                   </span>
                 </div>
 
@@ -883,7 +905,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   </button>
 
                   <a
-                    href={`https://wa.me/351934755363?text=Ol%C3%A1%20Kicks%20Club!%20Fiz%20a%20encomenda%20com%20o%20c%C3%B3digo%20${orderCode}.`}
+                    href={`https://wa.me/244952948694?text=Ol%C3%A1%20Kicks%20Club!%20Fiz%20a%20encomenda%20com%20o%20c%C3%B3digo%20${orderCode}.`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold uppercase text-xs flex items-center justify-center gap-2 transition-colors"
@@ -974,7 +996,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     }}
                     className="hover:text-black hover:underline"
                   >
-                    Envio CTT 24/48h
+                    Envio 7-15 dias úteis
                   </button>
                   <span>•</span>
                   <button

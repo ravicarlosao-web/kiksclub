@@ -1022,8 +1022,8 @@ export const TRUST_TICKER_ITEMS = [
 
 export const FAQS = [
   {
-    q: 'Como funciona o envio e prazos de entrega em Portugal?',
-    a: 'Todos os pedidos são processados em 24h e enviados via transportadora expresso (CTT Express) com número de rastreio em tempo real. O prazo médio de entrega para Portugal Continental é de 24 a 48 horas úteis, e para os Açores e Madeira de 3 a 5 dias úteis.'
+    q: 'Como funciona o envio e prazos de entrega?',
+    a: 'Todos os pedidos são processados rapidamente e enviados com número de rastreio em tempo real. O prazo médio de entrega é de 7 a 15 dias úteis.'
   },
   {
     q: 'Os sneakers são 100% autênticos e de qualidade garantida?',
@@ -1031,7 +1031,7 @@ export const FAQS = [
   },
   {
     q: 'Quais são os métodos de pagamento disponíveis?',
-    a: 'Aceitamos MB WAY (o método mais rápido e seguro em Portugal), Cartão de Crédito/Débito (Visa, Mastercard, Maestro), Referência Multibanco e Klarna (pagamento em 3x sem juros).'
+    a: 'Aceitamos MB WAY (o método mais rápido e seguro em Portugal), Cartão de Crédito/Débito (Visa, Mastercard, Maestro) e Referência Multibanco.'
   },
   {
     q: 'Qual é a política de trocas e devoluções?',

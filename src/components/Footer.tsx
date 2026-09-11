@@ -219,7 +219,7 @@ export const Footer: React.FC<FooterProps> = ({
             <ul className="space-y-3.5 text-xs sm:text-sm">
               <li>
                 <a
-                  href="https://wa.me/351934755363?text=Ol%C3%A1%20Kicks%20Club!%20Gostaria%20de%20tirar%20uma%20d%C3%BAvida."
+                  href="https://wa.me/244952948694?text=Ol%C3%A1%20Kicks%20Club!%20Gostaria%20de%20tirar%20uma%20d%C3%BAvida."
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group flex items-start gap-3 hover:text-[#FFDD00] transition-colors"
@@ -229,14 +229,14 @@ export const Footer: React.FC<FooterProps> = ({
                   </div>
                   <div>
                     <span className="text-[10px] uppercase font-bold text-neutral-400 block">WHATSAPP</span>
-                    <span className="text-white font-bold group-hover:text-[#FFDD00]">+351 934 755 363</span>
+                    <span className="text-white font-bold group-hover:text-[#FFDD00]">+244 952 948 694</span>
                   </div>
                 </a>
               </li>
 
               <li>
                 <a
-                  href="mailto:geral@kicksclub.pt"
+                  href="mailto:kicksclub9@gmail.com"
                   className="group flex items-start gap-3 hover:text-[#FFDD00] transition-colors"
                 >
                   <div className="w-8 h-8 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-300 group-hover:scale-110 transition-transform">
@@ -244,7 +244,7 @@ export const Footer: React.FC<FooterProps> = ({
                   </div>
                   <div>
                     <span className="text-[10px] uppercase font-bold text-neutral-400 block">EMAIL</span>
-                    <span className="text-white font-bold group-hover:text-[#FFDD00]">geral@kicksclub.pt</span>
+                    <span className="text-white font-bold group-hover:text-[#FFDD00]">kicksclub9@gmail.com</span>
                   </div>
                 </a>
               </li>

@@ -301,7 +301,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                 </div>
               )}
               <div className="flex justify-between text-neutral-400">
-                <span>Envio CTT Expresso 24h</span>
+                <span>Envio Seguro (7-15 dias úteis)</span>
                 <span className="text-green-400 font-bold">GRÁTIS</span>
               </div>
               <div className="flex justify-between text-sm font-black text-white pt-2 border-t border-neutral-800">

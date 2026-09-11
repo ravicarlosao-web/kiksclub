@@ -193,7 +193,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 ) : (
                   <div className="flex items-center gap-2 text-xs font-bold text-emerald-900 bg-emerald-50 border border-emerald-200 px-3 py-2 rounded-lg mt-3">
                     <Check className="w-4 h-4 text-emerald-600" />
-                    <span>Disponível em armazém ({currentSizeStock} unidades) • Envio CTT Expresso em 24h</span>
+                    <span>Disponível em armazém ({currentSizeStock} unidades) • Entrega em 7-15 dias úteis</span>
                   </div>
                 )
               ) : (
@@ -337,7 +337,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-600 hover:text-black transition-colors text-left"
               >
                 <Truck className="w-4 h-4 text-[#B45309] flex-shrink-0" />
-                <span className="text-[11px] font-medium leading-tight">Envio CTT 24/48h Portugal</span>
+                <span className="text-[11px] font-medium leading-tight">Envio Seguro 7-15 dias úteis</span>
               </button>
               <button
                 type="button"

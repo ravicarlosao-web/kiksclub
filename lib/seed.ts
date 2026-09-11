@@ -91,6 +91,18 @@ async function seed() {
       last_login TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )`,
+    `CREATE TABLE IF NOT EXISTS coupons (
+      id TEXT PRIMARY KEY,
+      code TEXT UNIQUE NOT NULL,
+      discount_percent INTEGER NOT NULL,
+      discount_amount REAL DEFAULT 0,
+      min_order_value REAL DEFAULT 0,
+      max_uses INTEGER DEFAULT NULL,
+      used_count INTEGER DEFAULT 0,
+      is_active INTEGER DEFAULT 1,
+      expires_at TEXT DEFAULT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`,
   ], 'write');
   console.log('  ✅ Tabelas criadas.\n');
 
@@ -180,6 +192,22 @@ async function seed() {
     args: ['admin-1', adminEmail, passwordHash, adminName],
   });
   console.log('  ✅ Utilizador admin criado.\n');
+
+  // 6. Seed de Cupões Iniciais
+  console.log('🎟️  A inserir cupões iniciais...');
+  const initialCoupons = [
+    { id: 'cp-kicks10', code: 'KICKS10', discount_percent: 10 },
+    { id: 'cp-step10', code: 'STEP10', discount_percent: 10 },
+    { id: 'cp-club10', code: 'CLUB10', discount_percent: 10 },
+  ];
+  for (const c of initialCoupons) {
+    await db.execute({
+      sql: `INSERT OR IGNORE INTO coupons (id, code, discount_percent, is_active)
+            VALUES (?, ?, ?, 1)`,
+      args: [c.id, c.code, c.discount_percent],
+    });
+  }
+  console.log('  ✅ Cupões inseridos.\n');
 
   console.log('🎉 Seed concluído com sucesso!');
   console.log(`\n📊 Resumo:`);

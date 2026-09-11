@@ -264,7 +264,7 @@ export const PoliciesModal: React.FC<PoliciesModalProps> = ({
                   Fale com a nossa equipa de apoio ao cliente para receber as instruções e a morada de expedição do armazém.
                 </div>
                 <a
-                  href="https://wa.me/351934755363?text=Ol%C3%A1!%20Gostaria%20de%20solicitar%20uma%20devolu%C3%A7%C3%A3o%20da%20minha%20encomenda."
+                  href="https://wa.me/244952948694?text=Ol%C3%A1!%20Gostaria%20de%20solicitar%20uma%20devolu%C3%A7%C3%A3o%20da%20minha%20encomenda."
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-3.5 py-2 bg-[#FFDD00] text-black font-black uppercase text-[11px] rounded-xl font-condensed whitespace-nowrap hover:bg-[#FFE838] transition-colors flex-shrink-0"
@@ -302,7 +302,7 @@ export const PoliciesModal: React.FC<PoliciesModalProps> = ({
                       PORTUGAL CONTINENTAL
                     </span>
                     <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 text-[10px] font-bold">
-                      24h a 48h Úteis
+                      7 a 15 Dias Úteis
                     </span>
                   </div>
                   <h4 className="text-base font-black uppercase text-white font-condensed">
@@ -447,7 +447,7 @@ export const PoliciesModal: React.FC<PoliciesModalProps> = ({
           </div>
 
           <a
-            href="https://wa.me/351934755363?text=Ol%C3%A1%20Kicks%20Club!%20Tenho%20uma%20d%C3%BAvida%20sobre%20as%20pol%C3%ADticas%20de%20trocas%20e%20envios."
+            href="https://wa.me/244952948694?text=Ol%C3%A1%20Kicks%20Club!%20Tenho%20uma%20d%C3%BAvida%20sobre%20as%20pol%C3%ADticas%20de%20trocas%20e%20envios."
             target="_blank"
             rel="noopener noreferrer"
             className="px-4 py-2 bg-[#FFDD00] hover:bg-[#FFE838] text-black font-black uppercase text-xs rounded-xl transition-colors font-condensed flex items-center justify-center gap-2 shadow-xs"

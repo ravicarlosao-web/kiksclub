@@ -155,7 +155,7 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({
             <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-200 text-[11px] text-neutral-600 flex items-center justify-between">
               <span>Precisas de alterar a morada de entrega?</span>
               <a
-                href="https://wa.me/351934755363?text=Ol%C3%A1%20Kicks%20Club!%20Preciso%20de%20ajuda%20com%20o%20rastreio%20da%20encomenda."
+                href="https://wa.me/244952948694?text=Ol%C3%A1%20Kicks%20Club!%20Preciso%20de%20ajuda%20com%20o%20rastreio%20da%20encomenda."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[#B45309] font-bold hover:underline"

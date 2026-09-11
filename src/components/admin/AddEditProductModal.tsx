@@ -19,7 +19,9 @@ import {
   AlertCircle,
   Link as LinkIcon,
   Minus,
-  Boxes
+  Boxes,
+  Cloud,
+  CheckCircle2
 } from 'lucide-react';
 import { Sneaker, StoreCategory } from '../../types';
 import { getDefaultSizeStock } from '../../utils/stockUtils';
@@ -137,6 +139,7 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
   const [isDraggingMain, setIsDraggingMain] = useState(false);
   const [isDraggingGallery, setIsDraggingGallery] = useState(false);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [uploadStatusText, setUploadStatusText] = useState('');
   const [imageErrorMessage, setImageErrorMessage] = useState('');
 
   const mainFileInputRef = useRef<HTMLInputElement>(null);
@@ -213,17 +216,61 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
     });
   };
 
+  // Upload de imagem diretamente para o Cloudinary via API backend
+  const uploadToCloudinary = async (base64Data: string, folder = 'kicksclub/products'): Promise<string> => {
+    if (!base64Data || base64Data.startsWith('http://') || base64Data.startsWith('https://')) {
+      return base64Data;
+    }
+
+    try {
+      const token = localStorage.getItem('kicksclub_admin_token') || sessionStorage.getItem('kicksclub_admin_token') || '';
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ image: base64Data, folder }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        console.warn('[Cloudinary Upload Warning]', errorData);
+        return base64Data; // fallback
+      }
+
+      const data = await res.json();
+      if (data && data.url) {
+        return data.url;
+      }
+      return base64Data;
+    } catch (err) {
+      console.warn('[Cloudinary Upload Error]', err);
+      return base64Data;
+    }
+  };
+
   const handleMainFileSelected = async (file: File) => {
     try {
       setIsProcessingImage(true);
       setImageErrorMessage('');
+      setUploadStatusText('A otimizar foto...');
       const base64 = await processImageFile(file);
-      setImage(base64);
-      setGallery((prev) => [base64, ...prev.filter(g => g !== base64)]);
+
+      setUploadStatusText('A enviar imagem para o Cloudinary...');
+      const cloudUrl = await uploadToCloudinary(base64);
+
+      setImage(cloudUrl);
+      setGallery((prev) => [cloudUrl, ...prev.filter(g => g !== cloudUrl && g !== base64)]);
     } catch (err: any) {
       setImageErrorMessage(err.message || 'Erro ao carregar a imagem.');
     } finally {
       setIsProcessingImage(false);
+      setUploadStatusText('');
     }
   };
 
@@ -232,10 +279,16 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
       setIsProcessingImage(true);
       setImageErrorMessage('');
       const newImages: string[] = [];
-      for (const file of Array.from(files)) {
+      const fileList = Array.from(files);
+
+      for (let i = 0; i < fileList.length; i++) {
+        const file = fileList[i];
         if (file.type.startsWith('image/')) {
+          setUploadStatusText(`A processar foto ${i + 1} de ${fileList.length}...`);
           const base64 = await processImageFile(file);
-          newImages.push(base64);
+          setUploadStatusText(`A enviar foto ${i + 1} para o Cloudinary...`);
+          const cloudUrl = await uploadToCloudinary(base64);
+          newImages.push(cloudUrl);
         }
       }
       if (newImages.length > 0) {
@@ -248,6 +301,7 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
       setImageErrorMessage(err.message || 'Erro ao adicionar fotos.');
     } finally {
       setIsProcessingImage(false);
+      setUploadStatusText('');
     }
   };
 
@@ -391,7 +445,7 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
     ? Math.round(((originalPrice - price) / originalPrice) * 100)
     : 0;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
@@ -401,48 +455,73 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
       return;
     }
 
-    const finalBrand = brand === 'OTHER' ? (customBrand.trim().toUpperCase() || 'KICKS CLUB') : brand;
-    const generatedId = productToEdit?.id || `kc-${department}-${finalBrand.toLowerCase().replace(/[^a-z0-9]/g, '')}-${Date.now().toString(36)}`;
+    setIsProcessingImage(true);
+    setUploadStatusText('A validar imagens no Cloudinary...');
 
-    const finalImage = image.trim();
-    const finalGallery = [
-      finalImage,
-      ...gallery.filter((g) => g && g.trim().length > 0 && g.trim() !== finalImage)
-    ];
+    try {
+      let finalMainImage = image.trim();
+      if (finalMainImage.startsWith('data:')) {
+        finalMainImage = await uploadToCloudinary(finalMainImage);
+      }
 
-    // Compute active stock across selected sizes
-    const totalUnits = selectedSizes.reduce((sum, s) => sum + (sizeStock[String(s)] || 0), 0);
-    const hasAnyStock = totalUnits > 0 && inStock;
+      const cleanGallery: string[] = [];
+      for (const g of gallery) {
+        if (!g || !g.trim()) continue;
+        if (g.startsWith('data:')) {
+          const uploaded = await uploadToCloudinary(g);
+          cleanGallery.push(uploaded);
+        } else {
+          cleanGallery.push(g);
+        }
+      }
 
-    const cleanSizeStock: Record<string, number> = {};
-    selectedSizes.forEach((s) => {
-      cleanSizeStock[String(s)] = sizeStock[String(s)] !== undefined ? sizeStock[String(s)] : 2;
-    });
+      const finalBrand = brand === 'OTHER' ? (customBrand.trim().toUpperCase() || 'KICKS CLUB') : brand;
+      const generatedId = productToEdit?.id || `kc-${department}-${finalBrand.toLowerCase().replace(/[^a-z0-9]/g, '')}-${Date.now().toString(36)}`;
 
-    const savedProduct: Sneaker = {
-      id: generatedId,
-      name: name.trim().toUpperCase(),
-      brand: finalBrand,
-      category,
-      department,
-      subcategory: subcategory.trim() || undefined,
-      sizeType: department === 'roupa' ? 'clothing' : department === 'tenis' ? 'shoes' : 'one_size',
-      price: Number(price),
-      originalPrice: Number(originalPrice),
-      discountPercentage,
-      image: finalImage,
-      gallery: finalGallery,
-      sizes: selectedSizes,
-      sizeStock: cleanSizeStock,
-      inStock: hasAnyStock,
-      featured,
-      tag: tag.trim() || undefined,
-      description: description.trim() || 'Artigo com qualidade verificada e detalhes minuciosos.',
-      details: details.filter((d) => d.trim().length > 0),
-    };
+      const finalGalleryList = [
+        finalMainImage,
+        ...cleanGallery.filter((g) => g && g.trim().length > 0 && g !== finalMainImage)
+      ];
 
-    onSave(savedProduct);
-    onClose();
+      // Compute active stock across selected sizes
+      const totalUnits = selectedSizes.reduce((sum, s) => sum + (sizeStock[String(s)] || 0), 0);
+      const hasAnyStock = totalUnits > 0 && inStock;
+
+      const cleanSizeStock: Record<string, number> = {};
+      selectedSizes.forEach((s) => {
+        cleanSizeStock[String(s)] = sizeStock[String(s)] !== undefined ? sizeStock[String(s)] : 2;
+      });
+
+      const savedProduct: Sneaker = {
+        id: generatedId,
+        name: name.trim().toUpperCase(),
+        brand: finalBrand,
+        category,
+        department,
+        subcategory: subcategory.trim() || undefined,
+        sizeType: department === 'roupa' ? 'clothing' : department === 'tenis' ? 'shoes' : 'one_size',
+        price: Number(price),
+        originalPrice: Number(originalPrice),
+        discountPercentage,
+        image: finalMainImage,
+        gallery: finalGalleryList,
+        sizes: selectedSizes,
+        sizeStock: cleanSizeStock,
+        inStock: hasAnyStock,
+        featured,
+        tag: tag.trim() || undefined,
+        description: description.trim() || 'Artigo com qualidade verificada e detalhes minuciosos.',
+        details: details.filter((d) => d.trim().length > 0),
+      };
+
+      onSave(savedProduct);
+      onClose();
+    } catch (err: any) {
+      setImageErrorMessage(err.message || 'Erro ao preparar produto para gravação.');
+    } finally {
+      setIsProcessingImage(false);
+      setUploadStatusText('');
+    }
   };
 
   if (!isOpen) return null;
@@ -758,10 +837,10 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
 
                       <div className="space-y-1">
                         <p className="text-sm font-black text-white font-condensed uppercase tracking-wide">
-                          {isProcessingImage ? 'A Processar Imagem...' : 'Clica para escolher foto ou arrasta para aqui'}
+                          {isProcessingImage ? (uploadStatusText || 'A Processar Imagem...') : 'Clica para escolher foto ou arrasta para aqui'}
                         </p>
                         <p className="text-xs text-neutral-400 max-w-sm mx-auto">
-                          Carrega fotos tiradas com a câmara, transferências ou galeria (JPG, PNG, WEBP).
+                          Carrega fotos tiradas com a câmara, transferências ou galeria (alojamento seguro no Cloudinary).
                         </p>
                       </div>
 
@@ -792,10 +871,18 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
                     {/* Image Info and Controls */}
                     <div className="flex-1 text-center sm:text-left space-y-2.5">
                       <div>
-                        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-green-400 bg-green-950/60 border border-green-800/80 px-2.5 py-1 rounded-full">
-                          <Check className="w-3.5 h-3.5" />
-                          Foto Real Pronta para Publicar
-                        </span>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-green-400 bg-green-950/60 border border-green-800/80 px-2.5 py-1 rounded-full">
+                            <Check className="w-3.5 h-3.5" />
+                            Foto Pronta para Publicar
+                          </span>
+                          {image.includes('cloudinary.com') && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-sky-400 bg-sky-950/60 border border-sky-800/80 px-2.5 py-1 rounded-full">
+                              <Cloud className="w-3.5 h-3.5" />
+                              Alojada no Cloudinary
+                            </span>
+                          )}
+                        </div>
                         <h5 className="text-sm font-black text-white uppercase font-condensed mt-1">
                           Imagem Principal do Artigo
                         </h5>

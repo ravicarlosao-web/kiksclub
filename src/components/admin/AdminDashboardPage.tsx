@@ -28,13 +28,16 @@ import {
   X,
   Menu,
   ChevronRight,
-  Layers
+  Layers,
+  Ticket
 } from 'lucide-react';
 import { Sneaker, Order, OrderStatus, AdminUser, StoreCategory } from '../../types';
 import { AddEditProductModal } from './AddEditProductModal';
 import { OrderDetailsModal } from './OrderDetailsModal';
 import { CategoryManagementTab } from './CategoryManagementTab';
 import { AddEditCategoryModal } from './AddEditCategoryModal';
+import { CouponsManagementTab } from './CouponsManagementTab';
+import { AdminChangePasswordSection } from './AdminChangePasswordSection';
 
 interface AdminDashboardPageProps {
   adminUser: AdminUser;
@@ -58,7 +61,7 @@ interface AdminDashboardPageProps {
   onAnonymizeCustomer?: (orderId: string) => void;
 }
 
-type TabType = 'overview' | 'products' | 'categories' | 'orders' | 'settings';
+type TabType = 'overview' | 'products' | 'categories' | 'coupons' | 'orders' | 'settings';
 
 export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   adminUser,
@@ -203,7 +206,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           <button
             onClick={handleOpenAddProduct}
             className="p-2 bg-[#FFDD00] text-black rounded-xl hover:bg-[#FFE838] transition-colors"
-            title="Novo Calçado"
+            title="Adicionar Novo Produto"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
           </button>
@@ -296,7 +299,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             </div>
           </div>
 
-          {/* Quick Action Button: Novo Calçado */}
+          {/* Quick Action Button: Novo Produto */}
           <div className="px-3.5 mb-4">
             <button
               onClick={() => {
@@ -306,7 +309,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               className="w-full py-2.5 px-3.5 bg-[#FFDD00] hover:bg-[#FFE838] text-black font-black text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all font-condensed shadow-md hover:scale-[1.01]"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
-              <span>Adicionar Novo Sneaker</span>
+              <span>Adicionar Novo Produto</span>
             </button>
           </div>
 
@@ -383,6 +386,25 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               }`}>
                 {categories.length}
               </span>
+            </button>
+
+            {/* 3.1 Gerir Cupões */}
+            <button
+              onClick={() => {
+                setCurrentTab('coupons');
+                setIsMobileSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${
+                currentTab === 'coupons'
+                  ? 'bg-[#FFDD00] text-black font-black shadow-md shadow-[#FFDD00]/10'
+                  : 'text-neutral-300 hover:text-white hover:bg-neutral-900/90'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Ticket className={`w-4 h-4 ${currentTab === 'coupons' ? 'text-black' : 'text-[#FFDD00]'}`} />
+                <span>Gerir Cupões</span>
+              </div>
+              <ChevronRight className={`w-3.5 h-3.5 ${currentTab === 'coupons' ? 'text-black/70' : 'text-neutral-600'}`} />
             </button>
 
             {/* 4. Gerir Encomendas */}
@@ -497,7 +519,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 bg-[#FFDD00] hover:bg-[#FFE838] text-black text-xs font-black uppercase rounded-xl transition-all shadow-md font-condensed hover:scale-[1.02]"
             >
               <Plus className="w-3.5 h-3.5 stroke-[3]" />
-              <span>Novo Calçado</span>
+              <span>Adicionar Novo Produto</span>
             </button>
 
             <button
@@ -554,10 +576,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 </div>
               </div>
 
-              {/* Card 3: Calçados no Catálogo */}
+              {/* Card 3: Produtos no Catálogo */}
               <div className="bg-[#141414] border border-neutral-800 rounded-2xl p-5 relative overflow-hidden group hover:border-neutral-700 transition-colors">
                 <div className="flex items-center justify-between text-neutral-400 mb-2">
-                  <span className="text-[11px] font-black uppercase tracking-wider">Total de Calçados</span>
+                  <span className="text-[11px] font-black uppercase tracking-wider">Total de Produtos</span>
                   <div className="w-8 h-8 rounded-xl bg-black border border-neutral-800 text-[#FFDD00] flex items-center justify-center">
                     <Package className="w-4 h-4" />
                   </div>
@@ -707,7 +729,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           </div>
         )}
 
-        {/* TAB 2: GERIR CALÇADOS / PRODUTOS */}
+        {/* TAB 2: GERIR PRODUTOS */}
         {currentTab === 'products' && (
           <div className="space-y-6 animate-in fade-in duration-300">
             
@@ -716,14 +738,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-xl font-black uppercase text-white font-condensed tracking-tight">
-                    CATÁLOGO DE CALÇADOS
+                    CATÁLOGO DE PRODUTOS
                   </h2>
                   <span className="px-2.5 py-0.5 bg-neutral-800 text-[#FFDD00] rounded-full text-xs font-bold">
                     {filteredProducts.length} de {products.length}
                   </span>
                 </div>
                 <p className="text-xs text-neutral-400 mt-0.5">
-                  Adiciona, edita preços, tamanhos disponíveis e remove calçados da loja online
+                  Adiciona, edita preços, tamanhos disponíveis e remove produtos da loja online
                 </p>
               </div>
 
@@ -732,7 +754,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 className="px-5 py-2.5 bg-[#FFDD00] hover:bg-[#FFE838] text-black font-black text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all shadow-md font-condensed hover:scale-[1.02] self-start md:self-auto"
               >
                 <Plus className="w-4 h-4 stroke-[3]" />
-                <span>ADICIONAR CALÇADO</span>
+                <span>ADICIONAR NOVO PRODUTO</span>
               </button>
             </div>
 
@@ -808,7 +830,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 <table className="w-full text-left text-xs text-neutral-300">
                   <thead className="bg-neutral-900 text-neutral-400 uppercase text-[10px] font-black tracking-wider border-b border-neutral-800">
                     <tr>
-                      <th className="py-3 px-4">Calçado</th>
+                      <th className="py-3 px-4">Produto</th>
                       <th className="py-3 px-4">Marca & Categoria</th>
                       <th className="py-3 px-4">Preço (€)</th>
                       <th className="py-3 px-4">Tamanhos EU</th>
@@ -911,18 +933,18 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                             <button
                               onClick={() => handleOpenEditProduct(product)}
                               className="p-2 rounded-lg bg-neutral-900 hover:bg-[#FFDD00] hover:text-black text-neutral-300 transition-colors"
-                              title="Editar Calçado"
+                              title="Editar Produto"
                             >
                               <Edit3 className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => {
-                                if (window.confirm(`Tens a certeza que desejas remover o modelo "${product.name}" do catálogo?`)) {
+                                if (window.confirm(`Tens a certeza que desejas remover o produto "${product.name}" do catálogo?`)) {
                                   onDeleteProduct(product.id);
                                 }
                               }}
                               className="p-2 rounded-lg bg-neutral-900 hover:bg-red-900 text-neutral-400 hover:text-red-200 transition-colors"
-                              title="Remover Calçado"
+                              title="Remover Produto"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -938,7 +960,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               {filteredProducts.length === 0 && (
                 <div className="text-center py-16 space-y-3">
                   <Package className="w-12 h-12 text-neutral-600 mx-auto" />
-                  <p className="text-sm font-bold text-neutral-400">Nenhum calçado encontrado para os filtros selecionados.</p>
+                  <p className="text-sm font-bold text-neutral-400">Nenhum produto encontrado para os filtros selecionados.</p>
                   <button
                     onClick={() => {
                       setProductSearch('');
@@ -977,6 +999,13 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 setCurrentTab('products');
               }}
             />
+          </div>
+        )}
+
+        {/* TAB 2.5: GERIR CUPÕES */}
+        {currentTab === 'coupons' && (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <CouponsManagementTab />
           </div>
         )}
 
@@ -1208,10 +1237,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             <div className="bg-[#141414] border border-neutral-800 rounded-3xl p-6 sm:p-8 space-y-6">
               <div>
                 <h3 className="text-lg font-black uppercase text-white font-condensed tracking-tight">
-                  CONFIGURAÇÕES GERAIS DA STEPZONE.PT
+                  CONFIGURAÇÕES GERAIS DA KICKSCLUB.PT
                 </h3>
                 <p className="text-xs text-neutral-400">
-                  Parâmetros de funcionamento da loja, métodos de envio e cupões ativos
+                  Parâmetros de funcionamento da loja, métodos de envio e segurança da conta
                 </p>
               </div>
 
@@ -1220,24 +1249,26 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 
                 <div className="p-4 bg-neutral-900/60 border border-neutral-800 rounded-2xl space-y-1">
                   <span className="text-[10px] font-black uppercase text-neutral-400 tracking-wider">Contacto WhatsApp Oficial</span>
-                  <p className="text-sm font-bold text-white">+351 934 755 363</p>
+                  <p className="text-sm font-bold text-white">+244 952 948 694</p>
                   <p className="text-[11px] text-neutral-500">Utilizado nos botões de apoio e confirmação de encomendas</p>
                 </div>
 
                 <div className="p-4 bg-neutral-900/60 border border-neutral-800 rounded-2xl space-y-1">
-                  <span className="text-[10px] font-black uppercase text-neutral-400 tracking-wider">Transportadora Padrão</span>
-                  <p className="text-sm font-bold text-white">CTT Expresso Portugal 24h</p>
-                  <p className="text-[11px] text-neutral-500">Envio gratuito em todas as encomendas</p>
+                  <span className="text-[10px] font-black uppercase text-neutral-400 tracking-wider">Prazo de Entrega Estimado</span>
+                  <p className="text-sm font-bold text-white">7 a 15 dias úteis</p>
+                  <p className="text-[11px] text-neutral-500">Envio seguro com rastreio em todas as encomendas</p>
                 </div>
 
-                <div className="p-4 bg-neutral-900/60 border border-neutral-800 rounded-2xl space-y-1">
-                  <span className="text-[10px] font-black uppercase text-neutral-400 tracking-wider">Cupões de Desconto Válidos</span>
-                  <div className="flex gap-2 mt-1">
-                    <span className="px-2 py-0.5 bg-black border border-neutral-800 text-[#FFDD00] rounded font-mono text-xs font-bold">KICKS10</span>
-                    <span className="px-2 py-0.5 bg-black border border-neutral-800 text-[#FFDD00] rounded font-mono text-xs font-bold">STEP10</span>
-                    <span className="px-2 py-0.5 bg-black border border-neutral-800 text-[#FFDD00] rounded font-mono text-xs font-bold">CLUB10</span>
+                <div 
+                  onClick={() => setCurrentTab('coupons')}
+                  className="p-4 bg-neutral-900/60 border border-neutral-800 hover:border-[#FFDD00]/50 rounded-2xl space-y-1 cursor-pointer transition-colors group"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase text-neutral-400 tracking-wider">Cupões de Desconto</span>
+                    <span className="text-[10px] text-[#FFDD00] font-bold group-hover:underline">Gerir Cupões ➔</span>
                   </div>
-                  <p className="text-[11px] text-neutral-500 mt-1">10% de desconto no checkout</p>
+                  <p className="text-xs font-bold text-white mt-1">Configura códigos promocionais para o checkout</p>
+                  <p className="text-[11px] text-neutral-500">Ligado diretamente à base de dados Turso</p>
                 </div>
 
                 <div className="p-4 bg-neutral-900/60 border border-neutral-800 rounded-2xl space-y-1">
@@ -1247,6 +1278,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 </div>
 
               </div>
+
+              {/* Secção de Alteração de Palavra-passe Admin */}
+              <AdminChangePasswordSection />
 
               {/* Maintenance & Reset actions */}
               <div className="pt-6 border-t border-neutral-800 space-y-4">

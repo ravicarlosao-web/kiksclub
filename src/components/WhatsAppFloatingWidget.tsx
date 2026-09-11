@@ -14,7 +14,7 @@ export const WhatsAppFloatingWidget: React.FC = () => {
 
   const handleSendMessage = (msg: string) => {
     const encoded = encodeURIComponent(msg);
-    window.open(`https://wa.me/351934755363?text=${encoded}`, '_blank');
+    window.open(`https://wa.me/244952948694?text=${encoded}`, '_blank');
     setUserMessage('');
   };
 
@@ -109,12 +109,12 @@ export const WhatsAppFloatingWidget: React.FC = () => {
             </form>
 
             <a
-              href="https://wa.me/351934755363?text=Ol%C3%A1%20Kicks%20Club!"
+              href="https://wa.me/244952948694?text=Ol%C3%A1%20Kicks%20Club!"
               target="_blank"
               rel="noopener noreferrer"
               className="mt-2 text-center block text-[10px] font-bold text-green-700 hover:underline"
             >
-              Abrir WhatsApp direto (+351 934 755 363)
+              Abrir WhatsApp direto (+244 952 948 694)
             </a>
           </div>
 

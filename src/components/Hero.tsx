@@ -139,8 +139,6 @@ export const Hero: React.FC<HeroProps> = ({ onExploreClick }) => {
                 <div className="w-3.5 h-3.5 rounded-full bg-red-500 opacity-90"></div>
                 <div className="w-3.5 h-3.5 rounded-full bg-yellow-500 opacity-90"></div>
               </div>
-              <span className="text-neutral-600">|</span>
-              <span className="font-bold text-white text-xs">Klarna.</span>
             </div>
           </div>
 

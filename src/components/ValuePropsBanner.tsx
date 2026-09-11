@@ -45,7 +45,7 @@ export const ValuePropsBanner: React.FC<ValuePropsBannerProps> = ({ onOpenPolici
             <div>
               <div className="flex items-center gap-1.5">
                 <h4 className="text-sm font-black uppercase tracking-wider text-white group-hover:text-[#FFDD00] transition-colors">
-                  CTT EXPRESSO 24/48H
+                  ENVIO SEGURO 7-15 DIAS ÚTEIS
                 </h4>
               </div>
               <p className="text-xs text-neutral-400 mt-1">
@@ -77,7 +77,7 @@ export const ValuePropsBanner: React.FC<ValuePropsBannerProps> = ({ onOpenPolici
 
           {/* Pillar 4: Apoio WhatsApp */}
           <a 
-            href="https://wa.me/351934755363?text=Ol%C3%A1%20Kicks%20Club!%20Gostaria%20de%20tirar%20uma%20d%C3%BAvida%20sobre%20um%20artigo."
+            href="https://wa.me/244952948694?text=Ol%C3%A1%20Kicks%20Club!%20Gostaria%20de%20tirar%20uma%20d%C3%BAvida%20sobre%20um%20artigo."
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-start gap-4 text-left group hover:opacity-90 transition-opacity"
