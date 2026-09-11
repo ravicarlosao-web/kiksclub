@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
-import { createClient } from '@libsql/client';
+import { createClient } from '@libsql/client/http';
 
 function setCors(res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');

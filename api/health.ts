@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@libsql/client';
+import { createClient } from '@libsql/client/http';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -10,7 +10,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(204).end();
   }
 
-  const url = (process.env.TURSO_DATABASE_URL || '').trim();
+  const rawUrl = (process.env.TURSO_DATABASE_URL || '').trim();
+  const url = rawUrl.replace(/^libsql:\/\//, 'https://');
   const token = (process.env.TURSO_AUTH_TOKEN || '').trim();
   const stripeKey = (process.env.STRIPE_SECRET_KEY || '').trim();
   const stripePub = (process.env.VITE_STRIPE_PUBLISHABLE_KEY || '').trim();

@@ -1,10 +1,11 @@
-import { createClient, type Client } from '@libsql/client';
+import { createClient, type Client } from '@libsql/client/http';
 
 let _client: Client | null = null;
 
 export function getDb(): Client {
   if (!_client) {
-    const url = (process.env.TURSO_DATABASE_URL || '').trim();
+    const rawUrl = (process.env.TURSO_DATABASE_URL || '').trim();
+    const url = rawUrl.replace(/^libsql:\/\//, 'https://');
     const authToken = (process.env.TURSO_AUTH_TOKEN || '').trim();
 
     if (!url || !authToken) {
