@@ -112,7 +112,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     0
   );
   const discountAmount = discountApplied ? (subtotal * discountPercent) / 100 : 0;
-  const shippingCost = 0; // Free express shipping
+  const shippingCost = subtotal >= 120 ? 0 : 5; // Taxa de envio 5€, gratuito acima de 120€
   const total = Math.max(0, subtotal - discountAmount + shippingCost);
 
   const applyCoupon = async () => {
@@ -184,7 +184,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         items: orderItems,
         subtotal,
         discount: discountAmount,
-        shipping: 0,
+        shipping: shippingCost,
         total,
       };
 
@@ -933,13 +933,55 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           {step !== 'success' && effectiveItems.length > 0 && (
             <div className="px-6 py-4 bg-neutral-50 border-t border-neutral-200 space-y-3 flex-shrink-0">
               
-              <div className="flex items-center justify-between text-xs text-neutral-700 font-bold">
-                <div className="flex items-center gap-2">
-                  <span>Envio Expresso CTT:</span>
-                  <span className="text-[#B45309] font-extrabold uppercase bg-amber-100 px-2 py-0.5 rounded">GRÁTIS</span>
+              <div className="space-y-2">
+                {/* Linha de Envio */}
+                <div className="flex items-center justify-between text-xs text-neutral-700 font-bold">
+                  <div className="flex items-center gap-1.5">
+                    <span>Envio Expresso CTT:</span>
+                    {shippingCost === 0 ? (
+                      <span className="text-emerald-700 font-extrabold uppercase bg-emerald-100 px-2 py-0.5 rounded text-[11px]">
+                        GRÁTIS (&gt; 120€)
+                      </span>
+                    ) : (
+                      <span className="text-neutral-900 font-extrabold font-condensed text-sm">
+                        5,00€
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs text-neutral-500 font-medium">
+                    {shippingCost === 0 ? 'Portes Oferta' : 'Grátis a partir de 120€'}
+                  </span>
                 </div>
-                <div className="text-base sm:text-lg font-black font-condensed text-black">
-                  Total: {total.toFixed(2).replace('.', ',')}€
+
+                {/* Barra de Progresso de Envio Grátis */}
+                {subtotal < 120 && (
+                  <div className="bg-amber-50 border border-amber-200/80 rounded-xl p-2.5 text-[11px] text-amber-900 space-y-1.5">
+                    <div className="flex items-center justify-between font-bold leading-tight">
+                      <span>Adiciona mais <strong className="text-black font-black">{(120 - subtotal).toFixed(2).replace('.', ',')}€</strong> para teres <strong className="text-[#B45309]">Envio Grátis</strong>!</span>
+                      <span className="font-condensed text-xs text-neutral-600">{Math.min(100, Math.round((subtotal / 120) * 100))}%</span>
+                    </div>
+                    <div className="w-full bg-amber-200/60 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className="bg-[#FFDD00] h-full rounded-full transition-all duration-300"
+                        style={{ width: `${Math.min(100, Math.round((subtotal / 120) * 100))}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Subtotal & Total */}
+                <div className="flex items-center justify-between pt-1 border-t border-neutral-200">
+                  <span className="text-xs text-neutral-500 font-bold uppercase tracking-wider">Subtotal:</span>
+                  <span className="text-xs font-bold text-neutral-700 font-condensed">
+                    {subtotal.toFixed(2).replace('.', ',')}€
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between pt-0.5">
+                  <span className="text-sm font-black uppercase text-neutral-900 font-condensed">Total a Pagar:</span>
+                  <div className="text-base sm:text-lg font-black font-condensed text-black">
+                    {total.toFixed(2).replace('.', ',')}€
+                  </div>
                 </div>
               </div>
 

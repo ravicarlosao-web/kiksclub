@@ -1015,7 +1015,7 @@ export const TRUST_TICKER_ITEMS = [
   '⚡ 10% OFF DISPONÍVEL COM CUPÃO: KICKS10',
   '📦 ENVIO SEGURADO & RASTREADO VIA CTT EXPRESS',
   '⭐ 4.7/5 EM AVALIAÇÕES REAIS DE CLIENTES',
-  '⚡ PORTES GRÁTIS PARA TODO PORTUGAL EM COMPRAS > 60€',
+  '⚡ TAXA DE ENVIO 5€ • PORTES GRÁTIS EM COMPRAS > 120€',
   '🛡️ SNEAKERS 100% AUTÊNTICOS COM VERIFICAÇÃO',
   '💳 PAGAMENTO SEGURO MB WAY & CARTÃO'
 ];
@@ -1023,7 +1023,7 @@ export const TRUST_TICKER_ITEMS = [
 export const FAQS = [
   {
     q: 'Como funciona o envio e prazos de entrega?',
-    a: 'Todos os pedidos são processados rapidamente e enviados com número de rastreio em tempo real. O prazo médio de entrega é de 7 a 15 dias úteis.'
+    a: 'A taxa de envio é de 5€ para Portugal continental e ilhas, sendo 100% gratuita para encomendas acima de 120€. Todos os pedidos são processados rapidamente e enviados com número de rastreio CTT Expresso em tempo real. O prazo médio de entrega é de 7 a 15 dias úteis.'
   },
   {
     q: 'Os sneakers são 100% autênticos e de qualidade garantida?',

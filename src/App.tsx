@@ -6,7 +6,7 @@ import { CollectionSection } from './components/CollectionSection';
 import { BrandStyleExplorer } from './components/BrandStyleExplorer';
 import { ValuePropsBanner } from './components/ValuePropsBanner';
 import { Footer } from './components/Footer';
-import { ProductDetailModal } from './components/ProductDetailModal';
+import { ProductDetailPage } from './components/ProductDetailPage';
 import { CartDrawer } from './components/CartDrawer';
 import { HelpFaqModal } from './components/HelpFaqModal';
 import { WishlistModal } from './components/WishlistModal';
@@ -43,6 +43,25 @@ const getCategorySectionInfo = (catId: string, defaultName: string) => {
     default:
       return { tag: 'DEPARTAMENTO OFICIAL', prefix: defaultName.toUpperCase(), highlight: 'DROP' };
   }
+};
+
+const getProductIdFromUrl = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  const path = window.location.pathname;
+  if (path.toLowerCase().startsWith('/produto/')) {
+    const id = decodeURIComponent(path.slice('/produto/'.length).split('/')[0]);
+    if (id) return id;
+  }
+  const params = new URLSearchParams(window.location.search);
+  const paramId = params.get('product') || params.get('produto');
+  if (paramId) return paramId;
+
+  const hash = window.location.hash;
+  if (hash.toLowerCase().startsWith('#produto/')) {
+    const id = decodeURIComponent(hash.slice('#produto/'.length).split('/')[0]);
+    if (id) return id;
+  }
+  return null;
 };
 
 export default function App() {
@@ -117,13 +136,15 @@ export default function App() {
   const [selectedBrandFilter, setSelectedBrandFilter] = useState<string>('ALL');
   const [searchSort, setSearchSort] = useState<'default' | 'price-asc' | 'price-desc'>('default');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [currentPage, setCurrentPage] = useState<'home' | 'tracking' | 'admin-login' | 'admin-dashboard' | 'privacy' | 'policies' | 'help'>(() => {
+  const [selectedProduct, setSelectedProduct] = useState<Sneaker | null>(null);
+  const [currentPage, setCurrentPage] = useState<'home' | 'tracking' | 'admin-login' | 'admin-dashboard' | 'privacy' | 'policies' | 'help' | 'product-detail'>(() => {
     const path = typeof window !== 'undefined' ? window.location.pathname.toLowerCase() : '';
     const hash = typeof window !== 'undefined' ? window.location.hash.toLowerCase() : '';
     if (path === '/admin' || hash === '#admin') {
       const saved = typeof window !== 'undefined' ? localStorage.getItem('kicksclub_admin') : null;
       return saved ? 'admin-dashboard' : 'admin-login';
     }
+    if (path.startsWith('/produto/') || hash.startsWith('#produto/')) return 'product-detail';
     if (path === '/politicas' || path === '/policies' || hash === '#politicas') return 'policies';
     if (path === '/ajuda' || path === '/help' || path === '/faq' || hash === '#ajuda') return 'help';
     if (path === '/politica-privacidade' || path === '/privacidade') return 'privacy';
@@ -131,8 +152,35 @@ export default function App() {
     return 'home';
   });
 
+  // Sincronizar produto da URL inicial
+  useEffect(() => {
+    const prodId = getProductIdFromUrl();
+    if (prodId && products.length > 0) {
+      const found = products.find((p) => p.id === prodId || p.name.toLowerCase().replace(/\s+/g, '-') === prodId.toLowerCase());
+      if (found) {
+        setSelectedProduct(found);
+        setCurrentPage('product-detail');
+      }
+    }
+  }, [products]);
+
   // ── SEO Dinâmico React SPA (Atualiza title, meta tags e canonical por página) ──
-  useSEO(currentPage);
+  useSEO(
+    currentPage,
+    currentPage === 'product-detail' && selectedProduct
+      ? {
+          title: `${selectedProduct.brand} ${selectedProduct.name} | KicksClub.pt`,
+          description:
+            selectedProduct.description ||
+            `Compra ${selectedProduct.brand} ${selectedProduct.name} com 100% autenticidade e envio seguro em Portugal no KicksClub.pt.`,
+          canonicalUrl: `https://kicksclub.pt/produto/${encodeURIComponent(selectedProduct.id)}`,
+          ogTitle: `${selectedProduct.brand} ${selectedProduct.name} | KicksClub.pt`,
+          ogDescription:
+            selectedProduct.description ||
+            `Sneakers exclusivos com 100% de autenticidade, envio expresso rastreado em Portugal e pagamento seguro via MB WAY.`,
+        }
+      : undefined
+  );
 
   // Modals
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -141,7 +189,6 @@ export default function App() {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isPoliciesOpen, setIsPoliciesOpen] = useState(false);
   const [activePolicyTab, setActivePolicyTab] = useState<PolicyTab>('sizes');
-  const [quickViewProduct, setQuickViewProduct] = useState<Sneaker | null>(null);
   const [directSneakerForDrawer, setDirectSneakerForDrawer] = useState<Sneaker | null>(null);
 
   // Toast feedback
@@ -376,7 +423,6 @@ export default function App() {
 
   const handleDirectCheckout = (product: Sneaker, size: number | string) => {
     handleAddToCart(product, size, 1);
-    setQuickViewProduct(null);
     setDirectSneakerForDrawer(null);
     setIsCartOpen(true);
   };
@@ -447,9 +493,25 @@ export default function App() {
   };
 
   const handleNavigateToHome = () => {
+    setSelectedProduct(null);
     setCurrentPage('home');
     window.history.pushState({}, '', '/');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNavigateToProduct = (product: Sneaker) => {
+    setSelectedProduct(product);
+    setCurrentPage('product-detail');
+    window.history.pushState({}, '', `/produto/${encodeURIComponent(product.id)}`);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNavigateBack = () => {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      handleNavigateToHome();
+    }
   };
 
   const handleNavigateToPrivacy = () => {
@@ -473,6 +535,18 @@ export default function App() {
       const path = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
 
+      if (path.startsWith('/produto/') || hash.startsWith('#produto/')) {
+        const prodId = getProductIdFromUrl();
+        if (prodId && products.length > 0) {
+          const found = products.find((p) => p.id === prodId || p.name.toLowerCase().replace(/\s+/g, '-') === prodId.toLowerCase());
+          if (found) {
+            setSelectedProduct(found);
+            setCurrentPage('product-detail');
+            return;
+          }
+        }
+      }
+
       if (path === '/admin' || hash === '#admin') {
         const saved = localStorage.getItem('kicksclub_admin');
         setCurrentPage(saved ? 'admin-dashboard' : 'admin-login');
@@ -486,6 +560,7 @@ export default function App() {
         setCurrentPage('tracking');
       } else if (path === '/' || hash === '') {
         setCurrentPage('home');
+        setSelectedProduct(null);
       }
     };
 
@@ -495,7 +570,7 @@ export default function App() {
       window.removeEventListener('popstate', handleRouteSync);
       window.removeEventListener('hashchange', handleRouteSync);
     };
-  }, []);
+  }, [products]);
 
   // ── Loading Screen ─────────────────────────────────────────────
   const isInitialLoading = loadingProducts || loadingCategories;
@@ -558,7 +633,7 @@ export default function App() {
         onOpenWishlist={() => setIsWishlistOpen(true)}
         onOpenTracking={handleNavigateToTracking}
         onOpenHelp={handleNavigateToHelp}
-        onOpenPolicies={handleNavigateToPolicies}
+        onOpenPolicies={handleOpenPolicies}
         onSearch={(term) => { setSearchTerm(term); if (currentPage !== 'home') setCurrentPage('home'); }}
         onSelectCategory={(cat) => { setSelectedCategory(cat); if (currentPage !== 'home') setCurrentPage('home'); }}
         searchTerm={searchTerm}
@@ -589,6 +664,18 @@ export default function App() {
           <HelpFaqPage
             onNavigateHome={handleNavigateToHome}
             onOpenTracking={handleNavigateToTracking}
+          />
+        ) : currentPage === 'product-detail' && selectedProduct ? (
+          <ProductDetailPage
+            product={selectedProduct}
+            allProducts={products}
+            isWishlisted={wishlistIds.has(selectedProduct.id)}
+            onToggleWishlist={handleToggleWishlist}
+            onAddToCart={handleAddToCart}
+            onDirectCheckout={handleDirectCheckout}
+            onNavigateBack={handleNavigateBack}
+            onNavigateToProduct={handleNavigateToProduct}
+            onOpenPolicies={handleOpenPolicies}
           />
         ) : (
           <>
@@ -683,7 +770,7 @@ export default function App() {
                           product={sneaker}
                           isWishlisted={wishlistIds.has(sneaker.id)}
                           onToggleWishlist={handleToggleWishlist}
-                          onQuickView={(p) => handleOpenSneakerInDrawer(p)}
+                          onQuickView={(p) => handleNavigateToProduct(p)}
                         />
                       ))}
                     </div>
@@ -722,7 +809,7 @@ export default function App() {
                     products={catProducts}
                     wishlistIds={wishlistIds}
                     onToggleWishlist={handleToggleWishlist}
-                    onQuickView={(p) => handleOpenSneakerInDrawer(p)}
+                    onQuickView={(p) => handleNavigateToProduct(p)}
                     onViewAll={() => {
                       setSelectedCategory(cat.id);
                       const el = document.getElementById(`section-${cat.id}`);
@@ -758,7 +845,7 @@ export default function App() {
               products={hypeMultiProducts}
               wishlistIds={wishlistIds}
               onToggleWishlist={handleToggleWishlist}
-              onQuickView={(p) => handleOpenSneakerInDrawer(p)}
+              onQuickView={(p) => handleNavigateToProduct(p)}
               onViewAll={() => {
                 const el = document.getElementById('section-hype');
                 el?.scrollIntoView({ behavior: 'smooth' });
@@ -776,7 +863,7 @@ export default function App() {
         categories={categories}
         onOpenHelp={handleNavigateToHelp}
         onOpenTracking={handleNavigateToTracking}
-        onOpenPolicies={handleNavigateToPolicies}
+        onOpenPolicies={handleOpenPolicies}
         onOpenPrivacy={handleNavigateToPrivacy}
         onOpenCart={() => { setDirectSneakerForDrawer(null); setIsCartOpen(true); }}
         onSelectCategory={(cat) => {
@@ -794,17 +881,6 @@ export default function App() {
       />
 
       {/* Interactive Overlays */}
-      <ProductDetailModal
-        product={quickViewProduct}
-        isOpen={Boolean(quickViewProduct)}
-        onClose={() => setQuickViewProduct(null)}
-        onAddToCart={handleAddToCart}
-        isWishlisted={quickViewProduct ? wishlistIds.has(quickViewProduct.id) : false}
-        onToggleWishlist={handleToggleWishlist}
-        onDirectCheckout={handleDirectCheckout}
-        onOpenPolicies={handleOpenPolicies}
-      />
-
       <CartDrawer
         isOpen={isCartOpen}
         onClose={() => { setIsCartOpen(false); setDirectSneakerForDrawer(null); }}
@@ -828,7 +904,10 @@ export default function App() {
         onClose={() => setIsWishlistOpen(false)}
         wishlistProducts={wishlistProducts}
         onRemoveWishlist={handleToggleWishlist}
-        onQuickView={(p) => handleOpenSneakerInDrawer(p)}
+        onQuickView={(p) => {
+          setIsWishlistOpen(false);
+          handleNavigateToProduct(p);
+        }}
       />
 
       <PoliciesModal

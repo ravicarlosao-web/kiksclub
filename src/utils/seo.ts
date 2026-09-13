@@ -18,10 +18,10 @@ const BASE_URL = 'https://kicksclub.pt';
 export const ROUTE_SEO_MAP: Record<string, SEOMetaConfig> = {
   home: {
     title: 'KicksClub.pt | Sneakers Exclusivos & Streetwear Club Portugal',
-    description: 'KicksClub.pt - O teu clube exclusivo de sneakers e streetwear em Portugal. Lançamentos e edições limitadas Nike, Yeezy, Jordan, Louis Vuitton e Balenciaga com 100% autenticidade e portes grátis acima de 60€.',
+    description: 'KicksClub.pt - O teu clube exclusivo de sneakers e streetwear em Portugal. Lançamentos e edições limitadas Nike, Yeezy, Jordan, Louis Vuitton e Balenciaga com 100% autenticidade e portes grátis acima de 120€.',
     canonicalUrl: `${BASE_URL}/`,
     ogTitle: 'KicksClub.pt | Sneakers Exclusivos & Streetwear em Portugal',
-    ogDescription: 'Move-te com estilo. Destaca-te sempre. Sneakers exclusivos com 100% de autenticidade, envio expresso rastreado em Portugal e pagamento seguro via MB WAY.',
+    ogDescription: 'Não é só o que calças. É quem és na rua. Sneakers exclusivos com 100% de autenticidade, envio expresso rastreado em Portugal e pagamento seguro via MB WAY.',
     noindex: false,
   },
   tracking: {
@@ -34,10 +34,10 @@ export const ROUTE_SEO_MAP: Record<string, SEOMetaConfig> = {
   },
   policies: {
     title: 'Políticas de Envio, Devoluções & Tamanhos | KicksClub.pt',
-    description: 'Informações sobre prazos de entrega em Portugal, portes grátis acima de 60€, direito de devolução de 14 dias e guia completo de tamanhos de sneakers.',
+    description: 'Informações sobre prazos de entrega em Portugal, taxa de envio de 5€, portes grátis acima de 120€, direito de devolução de 14 dias e guia de tamanhos.',
     canonicalUrl: `${BASE_URL}/politicas`,
     ogTitle: 'Políticas e Garantias | KicksClub.pt',
-    ogDescription: 'Consulta os termos de entrega rápida, segurança de pagamento e políticas de devolução do KicksClub Portugal.',
+    ogDescription: 'Consulta os termos de envio seguro CTT, taxa de 5€ com portes grátis acima de 120€ e políticas de troca.',
     noindex: false,
   },
   help: {
@@ -54,6 +54,14 @@ export const ROUTE_SEO_MAP: Record<string, SEOMetaConfig> = {
     canonicalUrl: `${BASE_URL}/politica-privacidade`,
     ogTitle: 'Política de Privacidade | KicksClub.pt',
     ogDescription: 'Compromisso de transparência e proteção integral dos dados de navegação e compras.',
+    noindex: false,
+  },
+  'product-detail': {
+    title: 'Produto | KicksClub.pt — Sneakers & Streetwear Portugal',
+    description: 'Detalhes, tamanhos e disponibilidade de stock. Compra online com 100% de autenticidade e entrega segura em Portugal.',
+    canonicalUrl: `${BASE_URL}/produto`,
+    ogTitle: 'Produto | KicksClub.pt',
+    ogDescription: 'Sneakers e streetwear exclusivos com entrega rastreada em Portugal.',
     noindex: false,
   },
   'admin-login': {

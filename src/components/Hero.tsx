@@ -39,43 +39,45 @@ export const Hero: React.FC<HeroProps> = ({ onExploreClick }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="max-w-3xl space-y-4 sm:space-y-5 text-left">
           
-          {/* Free Shipping Badge */}
+          {/* Shipping Badge */}
           <div>
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-neutral-700 bg-neutral-900/90 text-xs font-semibold text-neutral-200 shadow-xs">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-neutral-700 bg-neutral-900/90 text-xs font-semibold text-neutral-200 shadow-xs">
               <Truck className="w-3.5 h-3.5 text-[#FFDD00]" />
               <span>
-                <strong className="text-[#FFDD00] font-bold">ENVIO GRÁTIS</strong> EM COMPRAS ACIMA DE 60€
+                Taxa de Envio 5€ • <strong className="text-[#FFDD00] font-bold">PORTES GRÁTIS</strong> EM COMPRAS ACIMA DE 120€
               </span>
             </div>
           </div>
 
-          {/* Main Punchy Headlines - Proportional & Modern Size */}
-          <div className="space-y-0.5">
-            <h1 className="text-3xl sm:text-5xl md:text-6xl font-black italic uppercase tracking-tight leading-[0.96] font-condensed text-white">
-              MOVE-TE COM ESTILO.
+          {/* Main Punchy Creative Headlines */}
+          <div className="space-y-1.5">
+            <div className="inline-block mb-1">
+              <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-[#FFDD00] bg-[#FFDD00]/10 px-3 py-1 rounded-lg border border-[#FFDD00]/30 font-condensed">
+                O TEU CLUBE DE GRAILS & SNEAKERS EM PORTUGAL
+              </span>
+            </div>
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-black italic uppercase tracking-tight leading-[0.94] font-condensed text-white">
+              NÃO É SÓ O QUE CALÇAS.
             </h1>
-            <h2 className="text-3xl sm:text-5xl md:text-6xl font-black italic uppercase tracking-tight leading-[0.96] font-condensed text-[#FFDD00]">
-              DESTACA-TE SEMPRE.
+            <h2 className="text-3xl sm:text-5xl md:text-6xl font-black italic uppercase tracking-tight leading-[0.94] font-condensed text-[#FFDD00]">
+              É QUEM ÉS NA RUA.
             </h2>
           </div>
 
           {/* Subtext */}
           <p className="text-neutral-300 text-sm sm:text-base max-w-xl font-normal leading-relaxed">
-            Os sneakers, vestuário, relógios e acessórios que marcam presença e elevam o teu look a{' '}
-            <span className="text-[#FFDD00] font-semibold underline decoration-[#FFDD00]/60 underline-offset-4">
-              outro nível
-            </span>.
+            Acesso direto aos lançamentos mais disputados, silhuetas icónicas e drops exclusivos que definem a cultura sneakerhead. No KicksClub.pt garantimos <span className="text-[#FFDD00] font-bold">100% de autenticidade</span>, stock rigorosamente verificado e entrega segura à tua porta.
           </p>
 
-          {/* 3 Pillars / Trust highlights - Compact & Refined */}
+          {/* 3 Pillars / Trust highlights */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 w-full max-w-xl">
             <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-neutral-900/80 border border-neutral-800/80">
               <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-neutral-800/80 border border-neutral-700 flex items-center justify-center text-[#FFDD00]">
                 <Zap className="w-3.5 h-3.5 fill-current" />
               </div>
               <div className="text-left text-xs leading-tight">
-                <span className="font-bold text-white uppercase block">TENDÊNCIAS</span>
-                <span className="text-neutral-400 text-[11px]">que marcam o teu estilo</span>
+                <span className="font-bold text-white uppercase block">DROPS EXCLUSIVOS</span>
+                <span className="text-neutral-400 text-[11px]">Nike, Yeezy, Jordan & Luxo</span>
               </div>
             </div>
 
@@ -84,8 +86,8 @@ export const Hero: React.FC<HeroProps> = ({ onExploreClick }) => {
                 <ShieldCheck className="w-3.5 h-3.5" />
               </div>
               <div className="text-left text-xs leading-tight">
-                <span className="font-bold text-white uppercase block">COMPRA SEGURA</span>
-                <span className="text-neutral-400 text-[11px]">100% garantida & protegida</span>
+                <span className="font-bold text-white uppercase block">100% AUTÊNTICO</span>
+                <span className="text-neutral-400 text-[11px]">Inspecionado & verificado</span>
               </div>
             </div>
 
@@ -94,8 +96,8 @@ export const Hero: React.FC<HeroProps> = ({ onExploreClick }) => {
                 <Heart className="w-3.5 h-3.5" />
               </div>
               <div className="text-left text-xs leading-tight">
-                <span className="font-bold text-white uppercase block">+1800 CLIENTES</span>
-                <span className="text-neutral-400 text-[11px]">compras satisfeitas</span>
+                <span className="font-bold text-white uppercase block">CLUBE EM PORTUGAL</span>
+                <span className="text-neutral-400 text-[11px]">+2.000 clientes satisfeitos</span>
               </div>
             </div>
           </div>
@@ -105,9 +107,9 @@ export const Hero: React.FC<HeroProps> = ({ onExploreClick }) => {
             {/* Yellow Action Button */}
             <button
               onClick={onExploreClick}
-              className="px-7 py-3 bg-[#FFDD00] hover:bg-[#FFE533] text-black font-black text-base uppercase tracking-wider rounded-xl flex items-center gap-2.5 shadow-md shadow-[#FFDD00]/20 transition-all hover:scale-105 active:scale-95 group font-condensed cursor-pointer"
+              className="px-7 py-3.5 bg-[#FFDD00] hover:bg-[#FFE533] text-black font-black text-base uppercase tracking-wider rounded-xl flex items-center gap-2.5 shadow-lg shadow-[#FFDD00]/25 transition-all hover:scale-105 active:scale-95 group font-condensed cursor-pointer"
             >
-              <span>EXPLORAR COLEÇÃO</span>
+              <span>EXPLORAR OS DROPS</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
 
@@ -116,10 +118,10 @@ export const Hero: React.FC<HeroProps> = ({ onExploreClick }) => {
               <div className="flex flex-col items-center justify-center">
                 <Zap className="w-3.5 h-3.5 text-[#FFDD00] mb-0.5 fill-[#FFDD00]" />
                 <span className="text-[9px] font-black uppercase text-white leading-tight">
-                  NÃO É SÓ MODA.
+                  VIVE O HYPE.
                 </span>
                 <span className="text-[9px] font-black uppercase text-[#FFDD00] leading-tight">
-                  É ATITUDE.
+                  SÊ ÚNICO.
                 </span>
               </div>
             </div>
