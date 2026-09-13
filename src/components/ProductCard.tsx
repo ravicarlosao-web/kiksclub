@@ -19,9 +19,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const isAvailable = isProductAvailable(product);
 
   return (
-    <div 
+    <article 
       className="group relative bg-white rounded-2xl p-4 sm:p-4.5 flex flex-col justify-between border border-neutral-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_25px_rgba(0,0,0,0.09)] transition-all duration-300 select-none h-full"
+      itemScope 
+      itemType="https://schema.org/Product"
     >
+      {/* Microdados para motores de busca */}
+      <meta itemProp="name" content={product.name} />
+      <meta itemProp="brand" content={product.brand} />
+      <meta itemProp="image" content={product.image} />
+      <meta itemProp="description" content={product.description || `${product.brand} ${product.name} - Calçado e streetwear exclusivo em Portugal.`} />
+
       {/* Top Badges & Actions */}
       <div className="flex items-center justify-between z-10 w-full mb-1">
         {/* Discount or Sold-out Badge */}
@@ -61,7 +69,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       >
         <img
           src={product.image}
-          alt={product.name}
+          alt={`${product.brand} ${product.name} - Sneakers Originais em Portugal`}
           className="w-full h-full object-contain filter drop-shadow-[0_6px_14px_rgba(0,0,0,0.07)] group-hover:scale-105 transition-transform duration-300 ease-out"
           loading="lazy"
         />
@@ -88,11 +96,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </h3>
         </div>
 
-        {/* Price & Action Area */}
+        {/* Price & Action Area with Offer Schema */}
         <div 
           onClick={() => onQuickView(product)}
           className="flex items-center justify-between pt-3 mt-auto cursor-pointer border-t border-neutral-100"
+          itemProp="offers" 
+          itemScope 
+          itemType="https://schema.org/Offer"
         >
+          <meta itemProp="priceCurrency" content="EUR" />
+          <meta itemProp="price" content={String(product.price)} />
+          <meta itemProp="availability" content={isAvailable ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"} />
+          <meta itemProp="url" content={`https://kicksclub.pt/?product=${encodeURIComponent(product.id)}`} />
+          <meta itemProp="priceValidUntil" content="2026-12-31" />
+
           {/* Price Pair */}
           <div className="flex items-baseline">
             <span className="text-base sm:text-[17px] font-black text-[#0B1A30] tracking-tight font-condensed">
@@ -122,7 +139,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </div>
       </div>
 
-    </div>
+    </article>
   );
 };
 

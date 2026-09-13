@@ -1,0 +1,16 @@
+# Robots.txt para KicksClub.pt
+# O teu clube exclusivo de sneakers & streetwear em Portugal
+
+User-agent: *
+Allow: /
+
+# Proteger áreas administrativas e endpoints privados
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /api/auth/*
+Disallow: /api/admin/*
+Disallow: /api/upload/*
+Disallow: /checkout/*
+
+# Sitemap principal do website
+Sitemap: https://kicksclub.pt/sitemap.xml

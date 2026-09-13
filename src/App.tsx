@@ -26,6 +26,7 @@ import { ProductCard } from './components/ProductCard';
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
 import { PoliciesPage } from './components/PoliciesPage';
 import { HelpFaqPage } from './components/HelpFaqPage';
+import { useSEO } from './hooks/useSEO';
 
 const getCategorySectionInfo = (catId: string, defaultName: string) => {
   switch (catId.toLowerCase()) {
@@ -129,6 +130,9 @@ export default function App() {
     if (path === '/rastreio' || path === '/tracking') return 'tracking';
     return 'home';
   });
+
+  // ── SEO Dinâmico React SPA (Atualiza title, meta tags e canonical por página) ──
+  useSEO(currentPage);
 
   // Modals
   const [isCartOpen, setIsCartOpen] = useState(false);

@@ -1,0 +1,17 @@
+{
+  "name": "KicksClub.pt | Sneakers Exclusivos & Streetwear Portugal",
+  "short_name": "KicksClub.pt",
+  "description": "O teu clube exclusivo de streetwear e sneakers em Portugal. Envios rápidos e 100% autenticidade.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0A0A",
+  "theme_color": "#0A0A0A",
+  "icons": [
+    {
+      "src": "/images/hero/nike-free-red.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

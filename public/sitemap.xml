@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <!-- Página Inicial / Catálogo Principal -->
+  <url>
+    <loc>https://kicksclub.pt/</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="pt-PT" href="https://kicksclub.pt/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://kicksclub.pt/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kicksclub.pt/"/>
+  </url>
+
+  <!-- Rastreio de Encomendas Express -->
+  <url>
+    <loc>https://kicksclub.pt/tracking</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="pt-PT" href="https://kicksclub.pt/tracking"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://kicksclub.pt/tracking"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kicksclub.pt/tracking"/>
+  </url>
+
+  <!-- Políticas, Envios, Devoluções & Guia de Tamanhos -->
+  <url>
+    <loc>https://kicksclub.pt/politicas</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="pt-PT" href="https://kicksclub.pt/politicas"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://kicksclub.pt/politicas"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kicksclub.pt/politicas"/>
+  </url>
+
+  <!-- Perguntas Frequentes e Centro de Ajuda -->
+  <url>
+    <loc>https://kicksclub.pt/ajuda</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="pt-PT" href="https://kicksclub.pt/ajuda"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://kicksclub.pt/ajuda"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kicksclub.pt/ajuda"/>
+  </url>
+
+  <!-- Política de Privacidade e Proteção de Dados (RGPD) -->
+  <url>
+    <loc>https://kicksclub.pt/politica-privacidade</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="pt-PT" href="https://kicksclub.pt/politica-privacidade"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://kicksclub.pt/politica-privacidade"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kicksclub.pt/politica-privacidade"/>
+  </url>
+</urlset>
