@@ -155,9 +155,14 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
   const [newColorName, setNewColorName] = useState('');
   const [newColorHex, setNewColorHex] = useState('#111827');
   const [newColorImage, setNewColorImage] = useState('');
+  const [isUploadingColor, setIsUploadingColor] = useState(false);
+  const [colorUploadStatus, setColorUploadStatus] = useState('');
+  const [showColorUrlManual, setShowColorUrlManual] = useState(false);
+  const [showMainUrlManual, setShowMainUrlManual] = useState(false);
 
   const mainFileInputRef = useRef<HTMLInputElement>(null);
   const galleryFileInputRef = useRef<HTMLInputElement>(null);
+  const colorFileInputRef = useRef<HTMLInputElement>(null);
   const [selectedSizes, setSelectedSizes] = useState<(number | string)[]>([38, 39, 40, 41, 42, 43, 44, 45]);
   const [sizeStock, setSizeStock] = useState<Record<string, number>>({});
   const [inStock, setInStock] = useState(true);
@@ -237,7 +242,7 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
     }
 
     try {
-      const token = localStorage.getItem('kicksclub_admin_token') || sessionStorage.getItem('kicksclub_admin_token') || '';
+      const token = localStorage.getItem('kicksclub_jwt') || localStorage.getItem('kicksclub_admin_token') || sessionStorage.getItem('kicksclub_admin_token') || '';
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
@@ -248,6 +253,7 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
       const res = await fetch('/api/upload', {
         method: 'POST',
         headers,
+        credentials: 'include',
         body: JSON.stringify({ image: base64Data, folder }),
       });
 
@@ -332,6 +338,25 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
     setGallery((prev) => [selectedImg, ...prev.filter(g => g !== selectedImg)]);
   };
 
+  const handleColorFileSelected = async (file: File) => {
+    try {
+      setIsUploadingColor(true);
+      setColorUploadStatus('A preparar foto...');
+      const base64 = await processImageFile(file);
+      setColorUploadStatus('A enviar foto para o Cloudinary...');
+      const cloudUrl = await uploadToCloudinary(base64, 'kicksclub/colors');
+      setNewColorImage(cloudUrl);
+      // Automatically add to product gallery if not present
+      setGallery((prev) => prev.includes(cloudUrl) ? prev : [...prev, cloudUrl]);
+    } catch (err: any) {
+      console.error('[Upload Cor]', err);
+      alert(err.message || 'Erro ao carregar fotografia da cor.');
+    } finally {
+      setIsUploadingColor(false);
+      setColorUploadStatus('');
+    }
+  };
+
   const handleAddColor = () => {
     if (!newColorName.trim()) return;
     const img = newColorImage.trim() || image || 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800&auto=format&fit=crop&q=80';
@@ -345,6 +370,7 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
     ]);
     setNewColorName('');
     setNewColorImage('');
+    setShowColorUrlManual(false);
   };
 
   const handleRemoveColor = (idxToRemove: number) => {
@@ -386,7 +412,9 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
       setTag(productToEdit.tag || '');
       setDescription(productToEdit.description || '');
       setDetails(productToEdit.details || ['Qualidade Premium', 'Embalagem original incluída']);
-      setImageSourceTab(productToEdit.image && productToEdit.image.startsWith('http') ? 'url' : 'upload');
+      setImageSourceTab('upload');
+      setShowMainUrlManual(false);
+      setShowColorUrlManual(false);
       setImageErrorMessage('');
     } else {
       setName('');
@@ -427,6 +455,8 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
         'Caixa completa com embalagem protegida para envio CTT Expresso'
       ]);
       setImageSourceTab('upload');
+      setShowMainUrlManual(false);
+      setShowColorUrlManual(false);
       setImageErrorMessage('');
     }
   }, [productToEdit, isOpen]);
@@ -546,6 +576,19 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
         cleanSizeStock[String(s)] = sizeStock[String(s)] !== undefined ? sizeStock[String(s)] : 2;
       });
 
+      const cleanColors: ProductColor[] = [];
+      for (const col of colors) {
+        let colImg = col.image ? col.image.trim() : '';
+        if (colImg.startsWith('data:')) {
+          colImg = await uploadToCloudinary(colImg, 'kicksclub/colors');
+        }
+        cleanColors.push({
+          name: col.name.trim(),
+          hex: col.hex,
+          image: colImg || finalMainImage,
+        });
+      }
+
       const savedProduct: Sneaker = {
         id: generatedId,
         name: name.trim().toUpperCase(),
@@ -561,7 +604,7 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
         discountPercentage,
         image: finalMainImage,
         gallery: finalGalleryList,
-        colors: colors.length > 0 ? colors : undefined,
+        colors: cleanColors.length > 0 ? cleanColors : undefined,
         sizes: selectedSizes,
         sizeStock: cleanSizeStock,
         inStock: hasAnyStock,
@@ -817,39 +860,16 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
               <div>
                 <label className="text-xs font-black uppercase tracking-wider text-[#FFDD00] font-condensed flex items-center gap-2">
                   <Camera className="w-4 h-4" />
-                  <span>4. Imagem do Artigo (Carregar Foto Real) *</span>
+                  <span>4. Fotografias do Artigo (Upload Direto para Cloudinary) *</span>
                 </label>
                 <p className="text-[11px] text-neutral-400 mt-0.5">
-                  Adiciona fotos reais do teu dispositivo (computador, câmara ou galeria do telemóvel)
+                  Carrega fotos diretamente do teu telemóvel ou computador. O sistema aloja no Cloudinary em alta definição.
                 </p>
               </div>
 
-              {/* Mode Toggle Tabs */}
-              <div className="flex items-center gap-1 bg-black/60 p-1 rounded-xl border border-neutral-800 self-start sm:self-auto">
-                <button
-                  type="button"
-                  onClick={() => setImageSourceTab('upload')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    imageSourceTab === 'upload'
-                      ? 'bg-[#FFDD00] text-black shadow-xs font-black'
-                      : 'text-neutral-400 hover:text-white'
-                  }`}
-                >
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>Ficheiro / Foto Real</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setImageSourceTab('url')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    imageSourceTab === 'url'
-                      ? 'bg-[#FFDD00] text-black shadow-xs font-black'
-                      : 'text-neutral-400 hover:text-white'
-                  }`}
-                >
-                  <LinkIcon className="w-3.5 h-3.5" />
-                  <span>Link URL</span>
-                </button>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-950/60 border border-sky-800/70 text-sky-400 text-xs font-bold self-start sm:self-auto">
+                <Cloud className="w-3.5 h-3.5" />
+                <span>Cloudinary Integrado</span>
               </div>
             </div>
 
@@ -861,315 +881,329 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
               </div>
             )}
 
-            {/* TAB 1: UPLOAD REAL IMAGE (PRIMARY & DEFAULT) */}
-            {imageSourceTab === 'upload' && (
-              <div className="space-y-4">
-                {/* Main Image Dropzone or Active Preview */}
-                {!image ? (
-                  <div
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setIsDraggingMain(true);
-                    }}
-                    onDragLeave={(e) => {
-                      e.preventDefault();
-                      setIsDraggingMain(false);
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      setIsDraggingMain(false);
-                      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                        handleMainFileSelected(e.dataTransfer.files[0]);
+            {/* UPLOAD REAL IMAGE (PRIMARY & DIRECT TO CLOUDINARY) */}
+            <div className="space-y-4">
+              {/* Main Image Dropzone or Active Preview */}
+              {!image ? (
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDraggingMain(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    setIsDraggingMain(false);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDraggingMain(false);
+                    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                      handleMainFileSelected(e.dataTransfer.files[0]);
+                    }
+                  }}
+                  onClick={() => mainFileInputRef.current?.click()}
+                  className={`relative border-2 border-dashed rounded-2xl p-6 sm:p-8 text-center cursor-pointer transition-all duration-200 ${
+                    isDraggingMain 
+                      ? 'border-[#FFDD00] bg-[#FFDD00]/10 scale-[1.01]' 
+                      : 'border-neutral-700 hover:border-[#FFDD00] bg-black/40 hover:bg-neutral-900/40'
+                  }`}
+                >
+                  <input
+                    ref={mainFileInputRef}
+                    type="file"
+                    accept="image/png, image/jpeg, image/jpg, image/webp, image/gif, image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        handleMainFileSelected(e.target.files[0]);
                       }
                     }}
-                    onClick={() => mainFileInputRef.current?.click()}
-                    className={`relative border-2 border-dashed rounded-2xl p-6 sm:p-8 text-center cursor-pointer transition-all duration-200 ${
-                      isDraggingMain 
-                        ? 'border-[#FFDD00] bg-[#FFDD00]/10 scale-[1.01]' 
-                        : 'border-neutral-700 hover:border-[#FFDD00] bg-black/40 hover:bg-neutral-900/40'
-                    }`}
-                  >
-                    <input
-                      ref={mainFileInputRef}
-                      type="file"
-                      accept="image/png, image/jpeg, image/jpg, image/webp, image/gif, image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files[0]) {
-                          handleMainFileSelected(e.target.files[0]);
-                        }
-                      }}
-                    />
+                  />
 
-                    <div className="flex flex-col items-center justify-center space-y-2.5">
-                      <div className="w-14 h-14 rounded-2xl bg-[#FFDD00]/15 border border-[#FFDD00]/30 flex items-center justify-center text-[#FFDD00] group-hover:scale-110 transition-transform">
-                        {isProcessingImage ? (
-                          <RefreshCw className="w-6 h-6 animate-spin text-[#FFDD00]" />
-                        ) : (
-                          <Upload className="w-6 h-6" />
-                        )}
-                      </div>
-
-                      <div className="space-y-1">
-                        <p className="text-sm font-black text-white font-condensed uppercase tracking-wide">
-                          {isProcessingImage ? (uploadStatusText || 'A Processar Imagem...') : 'Clica para escolher foto ou arrasta para aqui'}
-                        </p>
-                        <p className="text-xs text-neutral-400 max-w-sm mx-auto">
-                          Carrega fotos tiradas com a câmara, transferências ou galeria (alojamento seguro no Cloudinary).
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        className="px-4 py-2 bg-[#FFDD00] hover:bg-[#FFE838] text-black font-black text-xs uppercase tracking-wider rounded-xl font-condensed flex items-center gap-2 shadow-xs transition-all pointer-events-none"
-                      >
-                        <Camera className="w-4 h-4" />
-                        <span>Selecionar Foto do Dispositivo</span>
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  /* Active Main Image Display */
-                  <div className="bg-black/60 border border-neutral-700/80 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-5">
-                    {/* Image Preview Box */}
-                    <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-2xl bg-neutral-950 border border-neutral-700 p-2 flex items-center justify-center overflow-hidden flex-shrink-0 shadow-md">
-                      <img 
-                        src={image} 
-                        alt="Pré-visualização do produto" 
-                        className="w-full h-full object-contain filter drop-shadow-md rounded-xl"
-                      />
-                      <div className="absolute top-2 left-2 bg-[#FFDD00] text-black text-[9px] font-black uppercase px-2 py-0.5 rounded-md font-condensed shadow-xs">
-                        Principal
-                      </div>
+                  <div className="flex flex-col items-center justify-center space-y-2.5">
+                    <div className="w-14 h-14 rounded-2xl bg-[#FFDD00]/15 border border-[#FFDD00]/30 flex items-center justify-center text-[#FFDD00] group-hover:scale-110 transition-transform">
+                      {isProcessingImage ? (
+                        <RefreshCw className="w-6 h-6 animate-spin text-[#FFDD00]" />
+                      ) : (
+                        <Upload className="w-6 h-6" />
+                      )}
                     </div>
 
-                    {/* Image Info and Controls */}
-                    <div className="flex-1 text-center sm:text-left space-y-2.5">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-green-400 bg-green-950/60 border border-green-800/80 px-2.5 py-1 rounded-full">
-                            <Check className="w-3.5 h-3.5" />
-                            Foto Pronta para Publicar
-                          </span>
-                          {image.includes('cloudinary.com') && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-sky-400 bg-sky-950/60 border border-sky-800/80 px-2.5 py-1 rounded-full">
-                              <Cloud className="w-3.5 h-3.5" />
-                              Alojada no Cloudinary
-                            </span>
-                          )}
-                        </div>
-                        <h5 className="text-sm font-black text-white uppercase font-condensed mt-1">
-                          Imagem Principal do Artigo
-                        </h5>
-                        <p className="text-xs text-neutral-400">
-                          Esta imagem será o destaque na montra da loja, na busca e no carrinho de compras.
-                        </p>
-                      </div>
-
-                      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => mainFileInputRef.current?.click()}
-                          className="px-3.5 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-colors border border-neutral-700"
-                        >
-                          <RefreshCw className="w-3.5 h-3.5" />
-                          <span>Substituir Foto</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            handleRemoveGalleryImage(gallery.indexOf(image));
-                            setImage('');
-                          }}
-                          className="px-3 py-2 bg-red-950/40 hover:bg-red-900/60 text-red-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-red-800/60"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Remover</span>
-                        </button>
-
-                        <input
-                          ref={mainFileInputRef}
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => {
-                            if (e.target.files && e.target.files[0]) {
-                              handleMainFileSelected(e.target.files[0]);
-                            }
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* ADDITIONAL GALLERY PHOTOS SECTION */}
-                <div className="pt-2 border-t border-neutral-800/80">
-                  <div className="flex items-center justify-between mb-2.5">
-                    <div>
-                      <span className="text-xs font-black uppercase text-neutral-300 font-condensed flex items-center gap-1.5">
-                        <ImageIcon className="w-3.5 h-3.5 text-[#FFDD00]" />
-                        <span>Galeria de Fotos Adicionais (Outros Ângulos & Detalhes)</span>
-                      </span>
-                      <span className="text-[11px] text-neutral-400 block">
-                        Adiciona fotos de lado, sola, costas ou embalagem
-                      </span>
+                    <div className="space-y-1">
+                      <p className="text-sm font-black text-white font-condensed uppercase tracking-wide">
+                        {isProcessingImage ? (uploadStatusText || 'A Processar Imagem...') : 'Clica para escolher foto ou arrasta para aqui'}
+                      </p>
+                      <p className="text-xs text-neutral-400 max-w-sm mx-auto">
+                        Carrega fotos tiradas com a câmara, transferências ou galeria (alojamento seguro no Cloudinary).
+                      </p>
                     </div>
 
                     <button
                       type="button"
-                      onClick={() => galleryFileInputRef.current?.click()}
-                      className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded-xl text-xs font-bold text-white flex items-center gap-1.5 transition-colors"
+                      className="px-4 py-2 bg-[#FFDD00] hover:bg-[#FFE838] text-black font-black text-xs uppercase tracking-wider rounded-xl font-condensed flex items-center gap-2 shadow-xs transition-all pointer-events-none"
                     >
-                      <Plus className="w-3.5 h-3.5 text-[#FFDD00]" />
-                      <span>+ Adicionar Foto</span>
+                      <Camera className="w-4 h-4" />
+                      <span>Selecionar Foto do Dispositivo</span>
                     </button>
-                    <input
-                      ref={galleryFileInputRef}
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      className="hidden"
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files.length > 0) {
-                          handleGalleryFilesSelected(e.target.files);
-                        }
-                      }}
-                    />
-                  </div>
-
-                  {/* Additional photos thumbnails or dropzone */}
-                  {gallery.length > 0 ? (
-                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
-                      {gallery.map((imgUrl, idx) => {
-                        const isMain = imgUrl === image;
-                        return (
-                          <div 
-                            key={idx} 
-                            className={`relative aspect-square rounded-xl bg-black border p-1 group overflow-hidden ${
-                              isMain ? 'border-[#FFDD00] ring-2 ring-[#FFDD00]/30' : 'border-neutral-800'
-                            }`}
-                          >
-                            <img src={imgUrl} alt={`Foto ${idx + 1}`} className="w-full h-full object-contain rounded-lg" />
-                            {isMain && (
-                              <div className="absolute top-1 left-1 bg-[#FFDD00] text-black text-[8px] font-black uppercase px-1.5 py-0.5 rounded shadow-xs">
-                                Principal
-                              </div>
-                            )}
-
-                            {/* Hover overlay with action */}
-                            <div className="absolute inset-0 bg-black/75 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 p-1">
-                              {!isMain && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleSetAsMainImage(imgUrl)}
-                                  className="px-1.5 py-0.5 bg-[#FFDD00] text-black text-[9px] font-black rounded uppercase w-full text-center"
-                                >
-                                  Principal
-                                </button>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveGalleryImage(idx)}
-                                className="p-1 bg-red-600 hover:bg-red-500 text-white rounded-md text-[10px]"
-                                title="Eliminar foto"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-
-                      {/* Add more button tile */}
-                      <button
-                        type="button"
-                        onClick={() => galleryFileInputRef.current?.click()}
-                        className="aspect-square rounded-xl border border-dashed border-neutral-700 hover:border-[#FFDD00] bg-neutral-950 flex flex-col items-center justify-center text-neutral-400 hover:text-white transition-colors"
-                      >
-                        <Plus className="w-5 h-5 text-[#FFDD00] mb-1" />
-                        <span className="text-[10px] font-bold uppercase font-condensed">Mais Foto</span>
-                      </button>
-                    </div>
-                  ) : (
-                    <div 
-                      onClick={() => galleryFileInputRef.current?.click()}
-                      className="border border-dashed border-neutral-800 hover:border-neutral-700 rounded-xl p-3 text-center cursor-pointer bg-neutral-950/40 text-neutral-400 hover:text-neutral-200 text-xs transition-colors flex items-center justify-center gap-2"
-                    >
-                      <Plus className="w-4 h-4 text-[#FFDD00]" />
-                      <span>Clica aqui para adicionar mais fotos do artigo para a galeria</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* TAB 2: URL / PRESETS ALTERNATIVE */}
-            {imageSourceTab === 'url' && (
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-neutral-400 mb-1">
-                    Link URL da Imagem (Ex: Unsplash, Cloudinary, etc.)
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="url"
-                      value={image}
-                      onChange={(e) => {
-                        setImage(e.target.value);
-                        if (e.target.value && !gallery.includes(e.target.value)) {
-                          setGallery((prev) => [e.target.value, ...prev]);
-                        }
-                      }}
-                      placeholder="https://exemplo.com/foto-do-produto.jpg"
-                      className="flex-1 px-3.5 py-2.5 bg-black border border-neutral-700 rounded-xl text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFDD00]"
-                    />
-                    {image && (
-                      <button
-                        type="button"
-                        onClick={() => setImage('')}
-                        className="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-xl text-xs"
-                      >
-                        Limpar
-                      </button>
-                    )}
                   </div>
                 </div>
+              ) : (
+                /* Active Main Image Display */
+                <div className="bg-black/60 border border-neutral-700/80 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-5">
+                  {/* Image Preview Box */}
+                  <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-2xl bg-neutral-950 border border-neutral-700 p-2 flex items-center justify-center overflow-hidden flex-shrink-0 shadow-md">
+                    <img 
+                      src={image} 
+                      alt="Pré-visualização do produto" 
+                      className="w-full h-full object-contain filter drop-shadow-md rounded-xl"
+                    />
+                    <div className="absolute top-2 left-2 bg-[#FFDD00] text-black text-[9px] font-black uppercase px-2 py-0.5 rounded-md font-condensed shadow-xs">
+                      Principal
+                    </div>
+                  </div>
 
-                {/* Quick presets shortcut */}
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-neutral-400 block mb-2 font-condensed">
-                    Ou Escolhe uma das Fotos Rápidas da Loja:
-                  </span>
-                  <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
-                    {PRESET_IMAGES.map((preset, idx) => (
+                  {/* Image Info and Controls */}
+                  <div className="flex-1 text-center sm:text-left space-y-2.5">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-green-400 bg-green-950/60 border border-green-800/80 px-2.5 py-1 rounded-full">
+                          <Check className="w-3.5 h-3.5" />
+                          Foto Pronta para Publicar
+                        </span>
+                        {image.includes('cloudinary.com') && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-sky-400 bg-sky-950/60 border border-sky-800/80 px-2.5 py-1 rounded-full">
+                            <Cloud className="w-3.5 h-3.5" />
+                            Alojada no Cloudinary
+                          </span>
+                        )}
+                      </div>
+                      <h5 className="text-sm font-black text-white uppercase font-condensed mt-1">
+                        Imagem Principal do Artigo
+                      </h5>
+                      <p className="text-xs text-neutral-400">
+                        Esta imagem será o destaque na montra da loja, na busca e no carrinho de compras.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
                       <button
-                        key={idx}
+                        type="button"
+                        onClick={() => mainFileInputRef.current?.click()}
+                        className="px-3.5 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-colors border border-neutral-700"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Substituir Foto</span>
+                      </button>
+                      <button
                         type="button"
                         onClick={() => {
-                          setImage(preset.url);
-                          if (!gallery.includes(preset.url)) {
-                            setGallery((prev) => [preset.url, ...prev.filter(g => g !== preset.url)]);
+                          handleRemoveGalleryImage(gallery.indexOf(image));
+                          setImage('');
+                        }}
+                        className="px-3 py-2 bg-red-950/40 hover:bg-red-900/60 text-red-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-red-800/60"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Remover</span>
+                      </button>
+
+                      <input
+                        ref={mainFileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            handleMainFileSelected(e.target.files[0]);
                           }
                         }}
-                        className={`relative rounded-xl overflow-hidden border-2 aspect-square transition-all ${
-                          image === preset.url ? 'border-[#FFDD00] ring-2 ring-[#FFDD00]/30' : 'border-neutral-800 opacity-60 hover:opacity-100'
-                        }`}
-                        title={preset.label}
-                      >
-                        <img src={preset.url} alt={preset.label} className="w-full h-full object-cover" />
-                        {image === preset.url && (
-                          <div className="absolute inset-0 bg-[#FFDD00]/20 flex items-center justify-center">
-                            <Check className="w-3.5 h-3.5 text-white drop-shadow-md" />
-                          </div>
-                        )}
-                      </button>
-                    ))}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
+              {/* ADDITIONAL GALLERY PHOTOS SECTION */}
+              <div className="pt-2 border-t border-neutral-800/80">
+                <div className="flex items-center justify-between mb-2.5">
+                  <div>
+                    <span className="text-xs font-black uppercase text-neutral-300 font-condensed flex items-center gap-1.5">
+                      <ImageIcon className="w-3.5 h-3.5 text-[#FFDD00]" />
+                      <span>Galeria de Fotos Adicionais (Upload Direto para Cloudinary)</span>
+                    </span>
+                    <span className="text-[11px] text-neutral-400 block">
+                      Adiciona fotos de lado, sola, costas ou embalagem
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => galleryFileInputRef.current?.click()}
+                    className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded-xl text-xs font-bold text-white flex items-center gap-1.5 transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5 text-[#FFDD00]" />
+                    <span>+ Carregar Fotos</span>
+                  </button>
+                  <input
+                    ref={galleryFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        handleGalleryFilesSelected(e.target.files);
+                      }
+                    }}
+                  />
+                </div>
+
+                {/* Additional photos thumbnails or dropzone */}
+                {gallery.length > 0 ? (
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
+                    {gallery.map((imgUrl, idx) => {
+                      const isMain = imgUrl === image;
+                      return (
+                        <div 
+                          key={idx} 
+                          className={`relative aspect-square rounded-xl bg-black border p-1 group overflow-hidden ${
+                            isMain ? 'border-[#FFDD00] ring-2 ring-[#FFDD00]/30' : 'border-neutral-800'
+                          }`}
+                        >
+                          <img src={imgUrl} alt={`Foto ${idx + 1}`} className="w-full h-full object-contain rounded-lg" />
+                          {isMain && (
+                            <div className="absolute top-1 left-1 bg-[#FFDD00] text-black text-[8px] font-black uppercase px-1.5 py-0.5 rounded shadow-xs">
+                              Principal
+                            </div>
+                          )}
+
+                          {/* Hover overlay with action */}
+                          <div className="absolute inset-0 bg-black/75 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 p-1">
+                            {!isMain && (
+                              <button
+                                type="button"
+                                onClick={() => handleSetAsMainImage(imgUrl)}
+                                className="px-1.5 py-0.5 bg-[#FFDD00] text-black text-[9px] font-black rounded uppercase w-full text-center"
+                              >
+                                Principal
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveGalleryImage(idx)}
+                              className="p-1 bg-red-600 hover:bg-red-500 text-white rounded-md text-[10px]"
+                              title="Eliminar foto"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Add more button tile */}
+                    <button
+                      type="button"
+                      onClick={() => galleryFileInputRef.current?.click()}
+                      className="aspect-square rounded-xl border border-dashed border-neutral-700 hover:border-[#FFDD00] bg-neutral-950 flex flex-col items-center justify-center text-neutral-400 hover:text-white transition-colors"
+                    >
+                      <Plus className="w-5 h-5 text-[#FFDD00] mb-1" />
+                      <span className="text-[10px] font-bold uppercase font-condensed">Mais Fotos</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div 
+                    onClick={() => galleryFileInputRef.current?.click()}
+                    className="border border-dashed border-neutral-800 hover:border-neutral-700 rounded-xl p-3 text-center cursor-pointer bg-neutral-950/40 text-neutral-400 hover:text-neutral-200 text-xs transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Plus className="w-4 h-4 text-[#FFDD00]" />
+                    <span>Clica aqui para carregar mais fotos para a galeria (Cloudinary)</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Opção Secundária Discreta de URL Manual se Necessário */}
+              <div className="pt-2 border-t border-neutral-800/60">
+                {!showMainUrlManual ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowMainUrlManual(true)}
+                    className="text-[11px] text-neutral-500 hover:text-neutral-300 transition-colors flex items-center gap-1.5"
+                  >
+                    <LinkIcon className="w-3 h-3" />
+                    <span>Precisas de colar um link URL manual ou usar fotos pré-definidas? Clica aqui</span>
+                  </button>
+                ) : (
+                  <div className="space-y-3 bg-black/40 p-3 rounded-xl border border-neutral-800">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase text-neutral-400 font-condensed flex items-center gap-1.5">
+                        <LinkIcon className="w-3 h-3 text-[#FFDD00]" />
+                        <span>Inserir URL Manual da Foto Principal</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowMainUrlManual(false)}
+                        className="text-[10px] text-neutral-500 hover:text-white"
+                      >
+                        Ocultar
+                      </button>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="url"
+                        value={image}
+                        onChange={(e) => {
+                          setImage(e.target.value);
+                          if (e.target.value && !gallery.includes(e.target.value)) {
+                            setGallery((prev) => [e.target.value, ...prev]);
+                          }
+                        }}
+                        placeholder="https://exemplo.com/foto-do-produto.jpg"
+                        className="flex-1 px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFDD00]"
+                      />
+                      {image && (
+                        <button
+                          type="button"
+                          onClick={() => setImage('')}
+                          className="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-lg text-xs"
+                        >
+                          Limpar
+                        </button>
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-neutral-400 block mb-1.5 font-condensed">
+                        Ou escolhe uma foto rápida da loja:
+                      </span>
+                      <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
+                        {PRESET_IMAGES.map((preset, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => {
+                              setImage(preset.url);
+                              if (!gallery.includes(preset.url)) {
+                                setGallery((prev) => [preset.url, ...prev.filter(g => g !== preset.url)]);
+                              }
+                            }}
+                            className={`relative rounded-lg overflow-hidden border aspect-square transition-all ${
+                              image === preset.url ? 'border-[#FFDD00] ring-2 ring-[#FFDD00]/30' : 'border-neutral-800 opacity-60 hover:opacity-100'
+                            }`}
+                            title={preset.label}
+                          >
+                            <img src={preset.url} alt={preset.label} className="w-full h-full object-cover" />
+                            {image === preset.url && (
+                              <div className="absolute inset-0 bg-[#FFDD00]/20 flex items-center justify-center">
+                                <Check className="w-3 h-3 text-white drop-shadow-md" />
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* SECTOR 4B: VARIAÇÕES DE CORES COM TROCA DE IMAGEM */}
@@ -1187,41 +1221,55 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
             </div>
 
             <p className="text-[11px] text-neutral-400 mb-4 leading-relaxed">
-              Adiciona as diferentes opções de cor deste modelo. Quando o cliente clica na cor na loja, a foto principal e os ângulos mudam automaticamente.
+              Adiciona as diferentes opções de cor deste modelo e carrega a respetiva foto diretamente do teu dispositivo para o Cloudinary. Quando o cliente clica na cor na loja, a foto principal e a galeria mudam automaticamente.
             </p>
 
             {/* Form to add a color */}
-            <div className="bg-neutral-950 p-3.5 rounded-xl border border-neutral-800/80 mb-4 space-y-3">
-              <span className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block font-condensed">
-                Nova Opção de Cor
+            <div className="bg-neutral-950 p-4 rounded-xl border border-neutral-800/80 mb-4 space-y-4">
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#FFDD00] block font-condensed flex items-center gap-1.5">
+                <Plus className="w-3.5 h-3.5" />
+                <span>Adicionar Nova Cor com Fotografia Própria</span>
               </span>
+
+              {/* Hidden file input for color photo */}
+              <input
+                ref={colorFileInputRef}
+                type="file"
+                accept="image/png, image/jpeg, image/jpg, image/webp, image/*"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    handleColorFileSelected(e.target.files[0]);
+                  }
+                }}
+              />
 
               <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
                 {/* Color Name */}
-                <div className="sm:col-span-4">
+                <div className="sm:col-span-6">
                   <label className="block text-[10px] font-bold uppercase text-neutral-400 mb-1">
-                    Nome da Cor
+                    Nome da Cor *
                   </label>
                   <input
                     type="text"
                     value={newColorName}
                     onChange={(e) => setNewColorName(e.target.value)}
-                    placeholder="Ex: Branco / Cinza, Preto Onix..."
+                    placeholder="Ex: Branco / Cinza, Preto Onix, Royal Blue..."
                     className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFDD00]"
                   />
                 </div>
 
                 {/* Color Hex & Color Picker */}
-                <div className="sm:col-span-3">
+                <div className="sm:col-span-6">
                   <label className="block text-[10px] font-bold uppercase text-neutral-400 mb-1">
-                    Amostra / Tom
+                    Amostra de Cor / Tom
                   </label>
                   <div className="flex items-center gap-2">
                     <input
                       type="color"
                       value={newColorHex}
                       onChange={(e) => setNewColorHex(e.target.value)}
-                      className="w-9 h-8 rounded-lg bg-neutral-900 border border-neutral-700 cursor-pointer p-0.5"
+                      className="w-10 h-8 rounded-lg bg-neutral-900 border border-neutral-700 cursor-pointer p-0.5"
                     />
                     <input
                       type="text"
@@ -1232,30 +1280,156 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
                     />
                   </div>
                 </div>
+              </div>
 
-                {/* Image URL for this color */}
-                <div className="sm:col-span-5">
-                  <label className="block text-[10px] font-bold uppercase text-neutral-400 mb-1">
-                    URL da Foto desta Cor
+              {/* FOTO DA COR: UPLOAD DIRETO PARA CLOUDINARY */}
+              <div className="bg-neutral-900/70 p-3.5 rounded-xl border border-neutral-800 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-neutral-300 flex items-center gap-1.5">
+                    <Camera className="w-3.5 h-3.5 text-[#FFDD00]" />
+                    <span>Fotografia Desta Cor (Upload Direto para Cloudinary)</span>
                   </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="url"
-                      value={newColorImage}
-                      onChange={(e) => setNewColorImage(e.target.value)}
-                      placeholder="URL da imagem (ou usa a principal)"
-                      className="flex-1 px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFDD00]"
-                    />
+                  {newColorImage && newColorImage.includes('cloudinary.com') && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-sky-400 bg-sky-950/60 border border-sky-800/80 px-2 py-0.5 rounded-full">
+                      <Cloud className="w-3 h-3" />
+                      <span>Cloudinary OK</span>
+                    </span>
+                  )}
+                </div>
+
+                {/* Se já carregou foto para esta cor */}
+                {newColorImage ? (
+                  <div className="flex items-center gap-3 bg-black/60 p-2.5 rounded-xl border border-neutral-700">
+                    <div className="relative w-14 h-14 rounded-lg bg-white p-1 border border-neutral-700 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                      <img src={newColorImage} alt="Preview cor" className="w-full h-full object-contain" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
+                        <span className="text-xs font-bold text-white truncate">Foto pronta para a cor</span>
+                      </div>
+                      <p className="text-[10px] text-neutral-400 truncate mt-0.5">
+                        {newColorImage.includes('cloudinary') ? 'Alojada com segurança no Cloudinary' : 'Imagem selecionada'}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => colorFileInputRef.current?.click()}
+                        disabled={isUploadingColor}
+                        className="px-2.5 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        <span>Trocar</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNewColorImage('')}
+                        className="p-1.5 text-neutral-400 hover:text-red-400 rounded-lg transition-colors"
+                        title="Remover foto"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Botão de upload direto se ainda não selecionou */
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
                     <button
                       type="button"
-                      onClick={handleAddColor}
-                      disabled={!newColorName.trim()}
-                      className="px-3.5 py-2 bg-[#FFDD00] hover:bg-[#FFE838] text-black font-black text-xs uppercase tracking-wider rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all flex-shrink-0"
+                      onClick={() => colorFileInputRef.current?.click()}
+                      disabled={isUploadingColor}
+                      className="flex-1 px-4 py-3 bg-[#FFDD00] hover:bg-[#FFE838] text-black font-black text-xs uppercase tracking-wider rounded-xl font-condensed flex items-center justify-center gap-2 shadow-xs transition-all disabled:opacity-50"
                     >
-                      Adicionar
+                      {isUploadingColor ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin text-black" />
+                          <span>{colorUploadStatus || 'A enviar para o Cloudinary...'}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Camera className="w-4 h-4" />
+                          <span>Carregar Foto Desta Cor (Dispositivo / Cloudinary)</span>
+                        </>
+                      )}
                     </button>
                   </div>
+                )}
+
+                {/* Seleção rápida a partir da galeria de fotos já carregadas no artigo */}
+                {(gallery.length > 0 || image) && (
+                  <div className="pt-2 border-t border-neutral-800">
+                    <span className="text-[10px] uppercase font-bold text-neutral-400 block mb-1.5 font-condensed">
+                      Ou escolhe uma foto já carregada do artigo para esta cor:
+                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {Array.from(new Set([image, ...gallery].filter(Boolean))).map((photoUrl, pIdx) => {
+                        const isSelected = newColorImage === photoUrl;
+                        return (
+                          <button
+                            key={pIdx}
+                            type="button"
+                            onClick={() => setNewColorImage(photoUrl)}
+                            className={`relative w-10 h-10 rounded-lg bg-neutral-950 border p-0.5 overflow-hidden transition-all ${
+                              isSelected ? 'border-[#FFDD00] ring-2 ring-[#FFDD00]/50 scale-105' : 'border-neutral-700 hover:border-neutral-500 opacity-70 hover:opacity-100'
+                            }`}
+                            title="Usar esta foto"
+                          >
+                            <img src={photoUrl} alt={`Foto ${pIdx + 1}`} className="w-full h-full object-contain" />
+                            {isSelected && (
+                              <div className="absolute inset-0 bg-[#FFDD00]/30 flex items-center justify-center">
+                                <Check className="w-3 h-3 text-black font-black" />
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Alternativa URL discreta se absolutamente necessária */}
+                <div className="pt-1">
+                  {!showColorUrlManual ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowColorUrlManual(true)}
+                      className="text-[10px] text-neutral-500 hover:text-neutral-400 transition-colors"
+                    >
+                      Prefere colar um link URL manual para esta cor? Clica aqui
+                    </button>
+                  ) : (
+                    <div className="flex gap-2 items-center mt-1">
+                      <input
+                        type="url"
+                        value={newColorImage}
+                        onChange={(e) => setNewColorImage(e.target.value)}
+                        placeholder="https://exemplo.com/foto-cor.jpg"
+                        className="flex-1 px-3 py-1.5 bg-black border border-neutral-700 rounded-lg text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFDD00]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowColorUrlManual(false)}
+                        className="text-[10px] text-neutral-500 hover:text-white px-2 py-1"
+                      >
+                        Ocultar
+                      </button>
+                    </div>
+                  )}
                 </div>
+              </div>
+
+              {/* Botão de Gravar / Adicionar a Cor */}
+              <div className="flex justify-end pt-1">
+                <button
+                  type="button"
+                  onClick={handleAddColor}
+                  disabled={!newColorName.trim() || isUploadingColor}
+                  className="px-5 py-2.5 bg-[#FFDD00] hover:bg-[#FFE838] text-black font-black text-xs uppercase tracking-wider rounded-xl font-condensed flex items-center gap-2 shadow-xs transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Adicionar Opção de Cor</span>
+                </button>
               </div>
             </div>
 

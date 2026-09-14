@@ -32,7 +32,7 @@ function jsonError(res: VercelResponse, status: number, message: string): void {
 
 function extractToken(req: VercelRequest): string | null {
   if (req.headers.cookie) {
-    const match = req.headers.cookie.match(/(?:^|;\s*)kicksclub_admin_token=([^;]+)/);
+    const match = req.headers.cookie.match(/(?:^|;\s*)(?:kicksclub_admin_token|kicksclub_jwt)=([^;]+)/);
     if (match) return decodeURIComponent(match[1].trim());
   }
   const authHeader = req.headers.authorization;

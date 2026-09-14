@@ -269,8 +269,12 @@ export default function App() {
 
   // ── Admin Auth Handlers ────────────────────────────────────────
   const handleAdminLogin = (user: AdminUser, _token?: string) => {
-    // O token JWT de admin é mantido com segurança no cookie HttpOnly pelo backend
-    try { localStorage.removeItem('kicksclub_jwt'); } catch { /* ignore */ }
+    if (_token) {
+      try {
+        localStorage.setItem('kicksclub_jwt', _token);
+        localStorage.setItem('kicksclub_admin_token', _token);
+      } catch { /* ignore */ }
+    }
     setAdminUser(user);
     setCurrentPage('admin-dashboard');
     // Carregar encomendas quando admin faz login
