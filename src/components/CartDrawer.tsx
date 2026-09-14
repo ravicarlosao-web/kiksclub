@@ -24,9 +24,9 @@ interface CartDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   items: CartItem[];
-  onUpdateQuantity: (productId: string, size: number | string, quantity: number) => void;
-  onUpdateSize?: (productId: string, oldSize: number | string, newSize: number | string) => void;
-  onRemoveItem: (productId: string, size: number | string) => void;
+  onUpdateQuantity: (productId: string, size: number | string, quantity: number, color?: string) => void;
+  onUpdateSize?: (productId: string, oldSize: number | string, newSize: number | string, color?: string) => void;
+  onRemoveItem: (productId: string, size: number | string, color?: string) => void;
   onClearCart: () => void;
   onOpenTrackingWithCode?: (code: string) => void;
   directSneaker?: Sneaker | null;
@@ -166,8 +166,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         productId: item.product.id,
         name: item.product.name,
         brand: item.product.brand,
-        image: item.product.image,
+        image: item.colorImage || item.product.image,
         size: item.size,
+        color: item.color,
         quantity: item.quantity,
         price: item.product.price,
       }));
@@ -246,9 +247,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     }
   };
 
-  const handleSizeChange = (productId: string, oldSize: number, newSize: number) => {
+  const handleSizeChange = (productId: string, oldSize: number | string, newSize: number | string, color?: string) => {
     if (onUpdateSize) {
-      onUpdateSize(productId, oldSize, newSize);
+      onUpdateSize(productId, oldSize, newSize, color);
       setEditingItemKey(null);
     }
   };
@@ -492,7 +493,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     </div>
 
                     {items.map((item) => {
-                      const itemKey = `${item.product.id}-${item.size}`;
+                      const itemKey = `${item.product.id}-${item.size}-${item.color || 'default'}`;
                       const isEditingSize = editingItemKey === itemKey;
 
                       return (
@@ -503,7 +504,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                           <div className="flex gap-4">
                             <div className="w-20 h-20 bg-white rounded-xl p-1.5 border border-neutral-200 flex-shrink-0 flex items-center justify-center">
                               <img 
-                                src={item.product.image} 
+                                src={item.colorImage || item.product.image} 
                                 alt={item.product.name} 
                                 className="w-full h-full object-contain"
                               />
@@ -518,17 +519,22 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                                   {item.product.name}
                                 </h4>
                                 
-                                <div className="mt-1 flex items-center gap-2">
-                                  <span className="text-xs font-bold text-neutral-600">Tamanho:</span>
+                                <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                                  {item.color && (
+                                    <span className="text-[10px] font-bold bg-neutral-900 text-white px-2 py-0.5 rounded border border-neutral-700">
+                                      Cor: {item.color}
+                                    </span>
+                                  )}
+                                  <span className="text-xs font-bold text-neutral-600">Tam:</span>
                                   <span className="text-xs font-black bg-[#FFDD00] text-black px-2 py-0.5 rounded border border-black/20">
                                     Nº {item.size} EU
                                   </span>
                                   <button
                                     type="button"
                                     onClick={() => setEditingItemKey(isEditingSize ? null : itemKey)}
-                                    className="text-[11px] font-bold text-[#B45309] underline hover:text-black"
+                                    className="text-[11px] font-bold text-[#B45309] underline hover:text-black ml-1"
                                   >
-                                    {isEditingSize ? 'Fechar' : 'Alterar Número'}
+                                    {isEditingSize ? 'Fechar' : 'Alterar'}
                                   </button>
                                 </div>
                               </div>
@@ -552,7 +558,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
                                       <div className="flex items-center border border-neutral-300 rounded-lg bg-white">
                                         <button
-                                          onClick={() => onUpdateQuantity(item.product.id, item.size, item.quantity - 1)}
+                                          onClick={() => onUpdateQuantity(item.product.id, item.size, item.quantity - 1, item.color)}
                                           className="p-1 hover:text-red-500"
                                           aria-label="Diminuir quantidade"
                                         >
@@ -560,7 +566,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                                         </button>
                                         <span className="px-2 text-xs font-bold">{item.quantity}</span>
                                         <button
-                                          onClick={() => !isAtMax && onUpdateQuantity(item.product.id, item.size, item.quantity + 1)}
+                                          onClick={() => !isAtMax && onUpdateQuantity(item.product.id, item.size, item.quantity + 1, item.color)}
                                           disabled={isAtMax}
                                           className="p-1 hover:text-black disabled:opacity-30 disabled:cursor-not-allowed"
                                           title={isAtMax ? `Stock máximo (${availStock} un.) atingido` : 'Adicionar mais um'}
@@ -576,7 +582,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                             </div>
 
                             <button
-                              onClick={() => onRemoveItem(item.product.id, item.size)}
+                              onClick={() => onRemoveItem(item.product.id, item.size, item.color)}
                               className="text-neutral-400 hover:text-red-500 p-1 self-start"
                               aria-label="Remover do carrinho"
                             >
@@ -594,7 +600,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                                   <button
                                     key={s}
                                     type="button"
-                                    onClick={() => handleSizeChange(item.product.id, item.size, s)}
+                                    onClick={() => handleSizeChange(item.product.id, item.size, s, item.color)}
                                     className={`py-1.5 rounded-lg text-xs font-black transition-colors ${
                                       item.size === s
                                         ? 'bg-black text-[#FFDD00] ring-2 ring-black'

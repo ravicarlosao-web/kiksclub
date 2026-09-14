@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   X, 
   Heart, 
@@ -14,7 +14,7 @@ import {
   ArrowRight,
   AlertCircle
 } from 'lucide-react';
-import { Sneaker } from '../types';
+import { Sneaker, ProductColor } from '../types';
 import { getSizeStock, isSizeInStock, getFirstAvailableSize, getTotalStock } from '../utils/stockUtils';
 import { PolicyTab } from './PoliciesModal';
 
@@ -22,10 +22,10 @@ interface ProductDetailModalProps {
   product: Sneaker | null;
   isOpen: boolean;
   onClose: () => void;
-  onAddToCart: (product: Sneaker, size: number | string, quantity: number) => void;
+  onAddToCart: (product: Sneaker, size: number | string, quantity: number, color?: string, colorImage?: string) => void;
   isWishlisted: boolean;
   onToggleWishlist: (product: Sneaker) => void;
-  onDirectCheckout: (product: Sneaker, size: number | string) => void;
+  onDirectCheckout: (product: Sneaker, size: number | string, color?: string, colorImage?: string) => void;
   onOpenPolicies?: (tab: PolicyTab) => void;
 }
 
@@ -44,15 +44,22 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   const firstAvailable = getFirstAvailableSize(product);
   const [selectedSize, setSelectedSize] = useState<number | string>(firstAvailable !== undefined ? firstAvailable : (product.sizes[0] || 41));
   const [quantity, setQuantity] = useState<number>(1);
-  const [activeImage, setActiveImage] = useState<string>(product.image);
+  const [selectedColor, setSelectedColor] = useState<ProductColor | null>(
+    product.colors && product.colors.length > 0 ? product.colors[0] : null
+  );
+  const [activeImage, setActiveImage] = useState<string>(
+    product.colors && product.colors.length > 0 ? product.colors[0].image : product.image
+  );
   const [addedAnimation, setAddedAnimation] = useState<boolean>(false);
 
-  // Update selected size when product changes
+  // Update selected size & color when product changes
   useEffect(() => {
     if (product) {
       const avail = getFirstAvailableSize(product);
       setSelectedSize(avail !== undefined ? avail : (product.sizes[0] || 41));
-      setActiveImage(product.image);
+      const initialColor = product.colors && product.colors.length > 0 ? product.colors[0] : null;
+      setSelectedColor(initialColor);
+      setActiveImage(initialColor ? initialColor.image : product.image);
       setQuantity(1);
     }
   }, [product?.id]);
@@ -68,11 +75,31 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     }
   }, [currentSizeStock, isSelectedSizeAvailable, quantity]);
 
-  const images = product.gallery && product.gallery.length > 0 ? product.gallery : [product.image];
+  const images = useMemo(() => {
+    if (selectedColor) {
+      if (selectedColor.gallery && selectedColor.gallery.length > 0) {
+        return [selectedColor.image, ...selectedColor.gallery.filter((g) => g !== selectedColor.image)];
+      }
+      const fallback = (product.gallery || []).filter((g) => g !== selectedColor.image);
+      return [selectedColor.image, ...fallback];
+    }
+    return product.gallery && product.gallery.length > 0 ? product.gallery : [product.image];
+  }, [product, selectedColor]);
+
+  const handleSelectColor = (color: ProductColor) => {
+    setSelectedColor(color);
+    setActiveImage(color.image);
+  };
 
   const handleAdd = () => {
     if (!isSelectedSizeAvailable) return;
-    onAddToCart(product, selectedSize, quantity);
+    onAddToCart(
+      product,
+      selectedSize,
+      quantity,
+      selectedColor?.name,
+      selectedColor?.image || product.image
+    );
     setAddedAnimation(true);
     setTimeout(() => {
       setAddedAnimation(false);
@@ -204,6 +231,54 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               )}
             </div>
 
+            {/* Color Selector */}
+            {product.colors && product.colors.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-neutral-700 mb-2">
+                  <span className="flex items-center gap-1.5">
+                    <span>Cor:</span>
+                    <strong className="text-black normal-case font-extrabold bg-neutral-100 px-2 py-0.5 rounded border border-neutral-200">
+                      {selectedColor?.name || product.colors[0].name}
+                    </strong>
+                  </span>
+                  <span className="text-[11px] text-neutral-500 font-medium">
+                    {product.colors.length} {product.colors.length === 1 ? 'opção' : 'opções'}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {product.colors.map((c, idx) => {
+                    const isSelected = (selectedColor?.name || product.colors![0].name) === c.name;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleSelectColor(c)}
+                        title={`Cor: ${c.name}`}
+                        className={`group relative flex items-center gap-2 px-2.5 py-1.5 rounded-xl border-2 transition-all cursor-pointer ${
+                          isSelected
+                            ? 'border-black bg-neutral-900 text-white shadow-xs ring-2 ring-[#FFDD00]/50'
+                            : 'border-neutral-200 bg-white text-neutral-800 hover:border-neutral-400'
+                        }`}
+                      >
+                        <span
+                          className="w-4 h-4 rounded-full border border-black/10 shadow-inner flex-shrink-0 flex items-center justify-center overflow-hidden"
+                          style={{ backgroundColor: c.hex || '#000000' }}
+                        >
+                          {isSelected && (
+                            <Check className={`w-2.5 h-2.5 stroke-[3] ${c.hex && (c.hex.toLowerCase() === '#ffffff' || c.hex.toLowerCase() === '#f3f4f6' || c.hex.toLowerCase() === '#e5e7eb' || c.hex.toLowerCase() === '#fdfbf7' || c.hex.toLowerCase() === '#f8f9fa') ? 'text-black' : 'text-white'}`} />
+                          )}
+                        </span>
+                        <span className="text-xs font-bold whitespace-nowrap">
+                          {c.name}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Size Selector */}
             <div>
               <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-neutral-700 mb-2">
@@ -312,7 +387,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               </button>
 
               <button
-                onClick={() => onDirectCheckout(product, selectedSize)}
+                onClick={() => onDirectCheckout(product, selectedSize, selectedColor?.name, selectedColor?.image || product.image)}
                 disabled={!isSelectedSizeAvailable}
                 className={`w-full py-3.5 rounded-xl font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all group ${
                   !isSelectedSizeAvailable

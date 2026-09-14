@@ -17,6 +17,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onQuickView,
 }) => {
   const isAvailable = isProductAvailable(product);
+  const [activeImage, setActiveImage] = React.useState<string>(product.image);
+  const [activeColorName, setActiveColorName] = React.useState<string | null>(
+    product.colors && product.colors.length > 0 ? product.colors[0].name : null
+  );
+
+  React.useEffect(() => {
+    setActiveImage(product.image);
+    setActiveColorName(product.colors && product.colors.length > 0 ? product.colors[0].name : null);
+  }, [product.image, product.id]);
 
   return (
     <article 
@@ -27,7 +36,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {/* Microdados para motores de busca */}
       <meta itemProp="name" content={product.name} />
       <meta itemProp="brand" content={product.brand} />
-      <meta itemProp="image" content={product.image} />
+      <meta itemProp="image" content={activeImage} />
       <meta itemProp="description" content={product.description || `${product.brand} ${product.name} - Calçado e streetwear exclusivo em Portugal.`} />
 
       {/* Top Badges & Actions */}
@@ -68,9 +77,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         className="relative w-full h-36 sm:h-44 flex items-center justify-center cursor-pointer my-2 overflow-hidden"
       >
         <img
-          src={product.image}
+          src={activeImage}
           alt={`${product.brand} ${product.name} - Sneakers Originais em Portugal`}
-          className="w-full h-full object-contain filter drop-shadow-[0_6px_14px_rgba(0,0,0,0.07)] group-hover:scale-105 transition-transform duration-300 ease-out"
+          className="w-full h-full object-contain filter drop-shadow-[0_6px_14px_rgba(0,0,0,0.07)] group-hover:scale-105 transition-all duration-300 ease-out"
           loading="lazy"
         />
       </div>
@@ -79,12 +88,58 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       <div className="pt-2 flex flex-col justify-between flex-grow">
         <div>
           {/* Brand Tag in Bold Yellow / Amber */}
-          <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-[#B45309] block leading-tight">
-            {product.brand}
-          </span>
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-[#B45309] block leading-tight">
+              {product.brand}
+            </span>
+            {product.colors && product.colors.length > 1 && (
+              <span className="text-[10px] font-bold text-neutral-400">
+                {product.colors.length} cores
+              </span>
+            )}
+          </div>
 
           {/* Distinctive Small Yellow Accent Line under Brand Name */}
           <div className="w-7 h-[2.5px] bg-[#FFDD00] mt-1 mb-2.5 rounded-full" />
+
+          {/* Color Variants Interactive Swatches */}
+          {product.colors && product.colors.length > 1 && (
+            <div 
+              className="flex items-center gap-1.5 mb-2 py-0.5 overflow-x-auto" 
+              onClick={(e) => e.stopPropagation()}
+            >
+              {product.colors.slice(0, 5).map((color, idx) => {
+                const isSelected = activeColorName === color.name;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveImage(color.image);
+                      setActiveColorName(color.name);
+                    }}
+                    onMouseEnter={() => {
+                      setActiveImage(color.image);
+                      setActiveColorName(color.name);
+                    }}
+                    title={`Cor: ${color.name}`}
+                    className={`w-3.5 h-3.5 rounded-full border transition-all cursor-pointer flex-shrink-0 ${
+                      isSelected
+                        ? 'border-black ring-2 ring-[#FFDD00] scale-110'
+                        : 'border-neutral-300 hover:scale-115 opacity-85 hover:opacity-100'
+                    }`}
+                    style={{ backgroundColor: color.hex || '#000000' }}
+                  />
+                );
+              })}
+              {product.colors.length > 5 && (
+                <span className="text-[10px] font-bold text-neutral-400 pl-0.5">
+                  +{product.colors.length - 5}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Product Title: Deep Black */}
           <h3 

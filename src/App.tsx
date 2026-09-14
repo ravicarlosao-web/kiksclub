@@ -352,47 +352,82 @@ export default function App() {
   };
 
   // ── Cart operations ────────────────────────────────────────────
-  const handleAddToCart = (product: Sneaker, size: number | string, quantity = 1) => {
+  const handleAddToCart = (
+    product: Sneaker, 
+    size: number | string, 
+    quantity = 1,
+    color?: string,
+    colorImage?: string
+  ) => {
+    const chosenColor = color || (product.colors && product.colors.length > 0 ? product.colors[0].name : undefined);
+    const chosenImage = colorImage || (product.colors && product.colors.length > 0 ? product.colors[0].image : product.image);
+
     setCart((prev) => {
       const idx = prev.findIndex(
-        (item) => item.product.id === product.id && String(item.size) === String(size)
+        (item) => 
+          item.product.id === product.id && 
+          String(item.size) === String(size) &&
+          (chosenColor ? item.color === chosenColor : !item.color)
       );
       if (idx > -1) {
         const updated = [...prev];
         updated[idx].quantity += quantity;
         return updated;
       }
-      return [...prev, { product, size, quantity }];
+      return [
+        ...prev, 
+        { 
+          product, 
+          size, 
+          quantity, 
+          color: chosenColor,
+          colorImage: chosenImage,
+        }
+      ];
     });
 
     addToast({
       type: 'cart',
       title: 'Adicionado ao Carrinho',
-      message: `Tamanho ${size} • Pronta Entrega`,
-      product: { name: product.name, brand: product.brand, image: product.image, size, price: product.price },
+      message: `${chosenColor ? `Cor: ${chosenColor} • ` : ''}Tamanho ${size} • Pronta Entrega`,
+      product: { 
+        name: product.name, 
+        brand: product.brand, 
+        image: chosenImage, 
+        size, 
+        price: product.price 
+      },
       actionLabel: 'Ver Carrinho',
       onAction: () => { setDirectSneakerForDrawer(null); setIsCartOpen(true); },
     });
   };
 
-  const handleUpdateCartItemSize = (productId: string, oldSize: number | string, newSize: number | string) => {
+  const handleUpdateCartItemSize = (productId: string, oldSize: number | string, newSize: number | string, color?: string) => {
     if (String(oldSize) === String(newSize)) return;
     setCart((prev) => {
-      const targetItem = prev.find((item) => item.product.id === productId && String(item.size) === String(oldSize));
+      const targetItem = prev.find((item) => 
+        item.product.id === productId && 
+        String(item.size) === String(oldSize) &&
+        (color === undefined || item.color === color)
+      );
       if (!targetItem) return prev;
-      const existingNewSizeIndex = prev.findIndex((item) => item.product.id === productId && String(item.size) === String(newSize));
+      const existingNewSizeIndex = prev.findIndex((item) => 
+        item.product.id === productId && 
+        String(item.size) === String(newSize) &&
+        (color === undefined || item.color === color)
+      );
       if (existingNewSizeIndex > -1) {
         return prev
-          .filter((item) => !(item.product.id === productId && String(item.size) === String(oldSize)))
+          .filter((item) => !(item.product.id === productId && String(item.size) === String(oldSize) && (color === undefined || item.color === color)))
           .map((item) => {
-            if (item.product.id === productId && String(item.size) === String(newSize)) {
+            if (item.product.id === productId && String(item.size) === String(newSize) && (color === undefined || item.color === color)) {
               return { ...item, quantity: item.quantity + targetItem.quantity };
             }
             return item;
           });
       } else {
         return prev.map((item) => {
-          if (item.product.id === productId && String(item.size) === String(oldSize)) {
+          if (item.product.id === productId && String(item.size) === String(oldSize) && (color === undefined || item.color === color)) {
             return { ...item, size: newSize };
           }
           return item;
@@ -401,17 +436,24 @@ export default function App() {
     });
   };
 
-  const handleUpdateCartQuantity = (productId: string, size: number | string, quantity: number) => {
-    if (quantity <= 0) { handleRemoveCartItem(productId, size); return; }
+  const handleUpdateCartQuantity = (productId: string, size: number | string, quantity: number, color?: string) => {
+    if (quantity <= 0) { handleRemoveCartItem(productId, size, color); return; }
     setCart((prev) =>
-      prev.map((item) =>
-        item.product.id === productId && String(item.size) === String(size) ? { ...item, quantity } : item
-      )
+      prev.map((item) => {
+        const matches = item.product.id === productId && 
+          String(item.size) === String(size) && 
+          (color === undefined || item.color === color);
+        return matches ? { ...item, quantity } : item;
+      })
     );
   };
 
-  const handleRemoveCartItem = (productId: string, size: number | string) => {
-    setCart((prev) => prev.filter((item) => !(item.product.id === productId && String(item.size) === String(size))));
+  const handleRemoveCartItem = (productId: string, size: number | string, color?: string) => {
+    setCart((prev) => 
+      prev.filter((item) => 
+        !(item.product.id === productId && String(item.size) === String(size) && (color === undefined || item.color === color))
+      )
+    );
   };
 
   const handleClearCart = () => setCart([]);
@@ -421,8 +463,8 @@ export default function App() {
     setIsCartOpen(true);
   };
 
-  const handleDirectCheckout = (product: Sneaker, size: number | string) => {
-    handleAddToCart(product, size, 1);
+  const handleDirectCheckout = (product: Sneaker, size: number | string, color?: string, colorImage?: string) => {
+    handleAddToCart(product, size, 1, color, colorImage);
     setDirectSneakerForDrawer(null);
     setIsCartOpen(true);
   };

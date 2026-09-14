@@ -21,7 +21,7 @@ import {
   BadgeCheck,
   Sparkles,
 } from 'lucide-react';
-import { Sneaker } from '../types';
+import { Sneaker, ProductColor } from '../types';
 import {
   getSizeStock,
   getFirstAvailableSize,
@@ -35,8 +35,8 @@ interface ProductDetailPageProps {
   allProducts: Sneaker[];
   isWishlisted: boolean;
   onToggleWishlist: (product: Sneaker) => void;
-  onAddToCart: (product: Sneaker, size: number | string, quantity: number) => void;
-  onDirectCheckout: (product: Sneaker, size: number | string) => void;
+  onAddToCart: (product: Sneaker, size: number | string, quantity: number, color?: string, colorImage?: string) => void;
+  onDirectCheckout: (product: Sneaker, size: number | string, color?: string, colorImage?: string) => void;
   onNavigateBack: () => void;
   onNavigateToProduct: (product: Sneaker) => void;
   onOpenPolicies?: (tab: PolicyTab) => void;
@@ -79,7 +79,12 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     firstAvailable !== undefined ? firstAvailable : product.sizes[0] || 41
   );
   const [quantity, setQuantity] = useState<number>(1);
-  const [activeImage, setActiveImage] = useState<string>(product.image);
+  const [selectedColor, setSelectedColor] = useState<ProductColor | null>(
+    product.colors && product.colors.length > 0 ? product.colors[0] : null
+  );
+  const [activeImage, setActiveImage] = useState<string>(
+    product.colors && product.colors.length > 0 ? product.colors[0].image : product.image
+  );
   const [addedAnimation, setAddedAnimation] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<DetailTab>('description');
   const [copied, setCopied] = useState(false);
@@ -89,7 +94,9 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   useEffect(() => {
     const avail = getFirstAvailableSize(product);
     setSelectedSize(avail !== undefined ? avail : product.sizes[0] || 41);
-    setActiveImage(product.image);
+    const initialColor = product.colors && product.colors.length > 0 ? product.colors[0] : null;
+    setSelectedColor(initialColor);
+    setActiveImage(initialColor ? initialColor.image : product.image);
     setQuantity(1);
     setAddedAnimation(false);
     setActiveTab('description');
@@ -107,7 +114,21 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     }
   }, [currentSizeStock, isSelectedSizeAvailable, quantity]);
 
-  const images = product.gallery && product.gallery.length > 0 ? product.gallery : [product.image];
+  const images = useMemo(() => {
+    if (selectedColor) {
+      if (selectedColor.gallery && selectedColor.gallery.length > 0) {
+        return [selectedColor.image, ...selectedColor.gallery.filter((g) => g !== selectedColor.image)];
+      }
+      const fallback = (product.gallery || []).filter((g) => g !== selectedColor.image);
+      return [selectedColor.image, ...fallback];
+    }
+    return product.gallery && product.gallery.length > 0 ? product.gallery : [product.image];
+  }, [product, selectedColor]);
+
+  const handleSelectColor = (color: ProductColor) => {
+    setSelectedColor(color);
+    setActiveImage(color.image);
+  };
 
   const relatedProducts = useMemo(() => {
     return allProducts
@@ -124,7 +145,13 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
   const handleAdd = () => {
     if (!isSelectedSizeAvailable) return;
-    onAddToCart(product, selectedSize, quantity);
+    onAddToCart(
+      product,
+      selectedSize,
+      quantity,
+      selectedColor?.name,
+      selectedColor?.image || product.image
+    );
     setAddedAnimation(true);
     setTimeout(() => setAddedAnimation(false), 2000);
   };
@@ -366,6 +393,55 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               </div>
             )}
 
+            {/* Color Selector */}
+            {product.colors && product.colors.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-black uppercase tracking-wider text-neutral-800 flex items-center gap-2">
+                    <span>Cor:</span>
+                    <span className="text-black font-extrabold normal-case bg-neutral-100 px-2.5 py-0.5 rounded-lg border border-neutral-200">
+                      {selectedColor?.name || product.colors[0].name}
+                    </span>
+                  </span>
+                  <span className="text-xs text-neutral-500 font-semibold">
+                    {product.colors.length} {product.colors.length === 1 ? 'opção' : 'opções'}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2.5">
+                  {product.colors.map((c, idx) => {
+                    const isSelected = (selectedColor?.name || product.colors![0].name) === c.name;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleSelectColor(c)}
+                        title={`Cor: ${c.name}`}
+                        className={`group relative flex items-center gap-2.5 px-3 py-2 rounded-xl border-2 transition-all cursor-pointer ${
+                          isSelected
+                            ? 'border-black bg-neutral-900 text-white shadow-md ring-2 ring-[#FFDD00]/50'
+                            : 'border-neutral-200 bg-white text-neutral-800 hover:border-neutral-400 hover:shadow-xs'
+                        }`}
+                      >
+                        {/* Mini color swatch circle */}
+                        <span
+                          className="w-5 h-5 rounded-full border border-black/10 shadow-inner flex-shrink-0 flex items-center justify-center overflow-hidden"
+                          style={{ backgroundColor: c.hex || '#000000' }}
+                        >
+                          {isSelected && (
+                            <Check className={`w-3 h-3 stroke-[3] ${c.hex && (c.hex.toLowerCase() === '#ffffff' || c.hex.toLowerCase() === '#f3f4f6' || c.hex.toLowerCase() === '#e5e7eb' || c.hex.toLowerCase() === '#fdfbf7' || c.hex.toLowerCase() === '#f8f9fa') ? 'text-black' : 'text-white'}`} />
+                          )}
+                        </span>
+                        <span className="text-xs font-bold whitespace-nowrap">
+                          {c.name}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Size Selector */}
             <div>
               <div className="flex items-center justify-between mb-3">
@@ -489,7 +565,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               {/* Direct Checkout / MB WAY */}
               <button
                 id="direct-checkout-btn"
-                onClick={() => onDirectCheckout(product, selectedSize)}
+                onClick={() => onDirectCheckout(product, selectedSize, selectedColor?.name, selectedColor?.image || product.image)}
                 disabled={!isSelectedSizeAvailable}
                 className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2.5 transition-all group ${
                   !isSelectedSizeAvailable
@@ -751,7 +827,9 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-neutral-200 px-4 py-3 safe-area-inset-bottom shadow-2xl">
         <div className="flex items-center gap-3">
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-neutral-500 font-medium truncate">{product.brand} · Tamanho: <strong className="text-black">{selectedSize}</strong></p>
+            <p className="text-xs text-neutral-500 font-medium truncate">
+              {product.brand} {selectedColor ? `· Cor: ${selectedColor.name}` : ''} · Tam: <strong className="text-black">{selectedSize}</strong>
+            </p>
             <p className="text-base font-black text-black">{product.price.toFixed(2).replace('.', ',')}€</p>
           </div>
           <button
@@ -774,7 +852,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             <span>{addedAnimation ? 'Adicionado!' : 'Adicionar'}</span>
           </button>
           <button
-            onClick={() => onDirectCheckout(product, selectedSize)}
+            onClick={() => onDirectCheckout(product, selectedSize, selectedColor?.name, selectedColor?.image || product.image)}
             disabled={!isSelectedSizeAvailable}
             className={`px-4 py-3 rounded-xl font-black text-sm uppercase transition-all ${
               !isSelectedSizeAvailable

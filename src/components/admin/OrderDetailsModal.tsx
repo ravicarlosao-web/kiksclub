@@ -272,6 +272,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                       {item.name}
                     </h5>
                     <div className="flex items-center gap-3 text-[11px] text-neutral-400 mt-0.5">
+                      {item.color && <span>Cor: <strong className="text-[#FFDD00]">{item.color}</strong></span>}
                       <span>Tamanho EU: <strong className="text-white">{item.size}</strong></span>
                       <span>Qtd: <strong className="text-white">{item.quantity}</strong></span>
                     </div>

@@ -62,6 +62,7 @@ function rowToProduct(row: Record<string, unknown>) {
     tag: row.tag as string | undefined,
     description: row.description as string,
     details: safeJson(row.details as string, []),
+    colors: safeJson(row.colors as string, undefined),
   };
 }
 

@@ -21,9 +21,10 @@ import {
   Minus,
   Boxes,
   Cloud,
-  CheckCircle2
+  CheckCircle2,
+  Palette
 } from 'lucide-react';
-import { Sneaker, StoreCategory, Brand } from '../../types';
+import { Sneaker, StoreCategory, Brand, ProductColor } from '../../types';
 import { getDefaultSizeStock } from '../../utils/stockUtils';
 import { AddEditBrandModal } from './AddEditBrandModal';
 
@@ -148,6 +149,12 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [uploadStatusText, setUploadStatusText] = useState('');
   const [imageErrorMessage, setImageErrorMessage] = useState('');
+  
+  // Color variations state
+  const [colors, setColors] = useState<ProductColor[]>([]);
+  const [newColorName, setNewColorName] = useState('');
+  const [newColorHex, setNewColorHex] = useState('#111827');
+  const [newColorImage, setNewColorImage] = useState('');
 
   const mainFileInputRef = useRef<HTMLInputElement>(null);
   const galleryFileInputRef = useRef<HTMLInputElement>(null);
@@ -325,6 +332,25 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
     setGallery((prev) => [selectedImg, ...prev.filter(g => g !== selectedImg)]);
   };
 
+  const handleAddColor = () => {
+    if (!newColorName.trim()) return;
+    const img = newColorImage.trim() || image || 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800&auto=format&fit=crop&q=80';
+    setColors((prev) => [
+      ...prev,
+      {
+        name: newColorName.trim(),
+        hex: newColorHex || '#111827',
+        image: img,
+      }
+    ]);
+    setNewColorName('');
+    setNewColorImage('');
+  };
+
+  const handleRemoveColor = (idxToRemove: number) => {
+    setColors((prev) => prev.filter((_, idx) => idx !== idxToRemove));
+  };
+
   // Populate or reset form
   useEffect(() => {
     if (productToEdit) {
@@ -343,6 +369,7 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
       setOriginalPrice(productToEdit.originalPrice);
       setImage(productToEdit.image || '');
       setGallery(productToEdit.gallery || (productToEdit.image ? [productToEdit.image] : []));
+      setColors(productToEdit.colors || []);
       const currentSizes = productToEdit.sizes || [39, 40, 41, 42, 43];
       setSelectedSizes(currentSizes);
       const initialStock: Record<string, number> = {};
@@ -379,6 +406,10 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
       setOriginalPrice(180.00);
       setImage('');
       setGallery([]);
+      setColors([]);
+      setNewColorName('');
+      setNewColorHex('#111827');
+      setNewColorImage('');
       const defaultSizes = [38, 39, 40, 41, 42, 43, 44, 45];
       setSelectedSizes(defaultSizes);
       const initialStock: Record<string, number> = {};
@@ -530,6 +561,7 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
         discountPercentage,
         image: finalMainImage,
         gallery: finalGalleryList,
+        colors: colors.length > 0 ? colors : undefined,
         sizes: selectedSizes,
         sizeStock: cleanSizeStock,
         inStock: hasAnyStock,
@@ -1138,6 +1170,135 @@ export const AddEditProductModal: React.FC<AddEditProductModalProps> = ({
               </div>
             )}
 
+          </div>
+
+          {/* SECTOR 4B: VARIAÇÕES DE CORES COM TROCA DE IMAGEM */}
+          <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Palette className="w-4 h-4 text-[#FFDD00]" />
+                <label className="text-xs font-black uppercase tracking-wider text-neutral-200 font-condensed">
+                  Variações de Cor & Troca Dinâmica de Fotos
+                </label>
+              </div>
+              <span className="text-[11px] font-bold text-neutral-400">
+                {colors.length} {colors.length === 1 ? 'cor configurada' : 'cores configuradas'}
+              </span>
+            </div>
+
+            <p className="text-[11px] text-neutral-400 mb-4 leading-relaxed">
+              Adiciona as diferentes opções de cor deste modelo. Quando o cliente clica na cor na loja, a foto principal e os ângulos mudam automaticamente.
+            </p>
+
+            {/* Form to add a color */}
+            <div className="bg-neutral-950 p-3.5 rounded-xl border border-neutral-800/80 mb-4 space-y-3">
+              <span className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block font-condensed">
+                Nova Opção de Cor
+              </span>
+
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                {/* Color Name */}
+                <div className="sm:col-span-4">
+                  <label className="block text-[10px] font-bold uppercase text-neutral-400 mb-1">
+                    Nome da Cor
+                  </label>
+                  <input
+                    type="text"
+                    value={newColorName}
+                    onChange={(e) => setNewColorName(e.target.value)}
+                    placeholder="Ex: Branco / Cinza, Preto Onix..."
+                    className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFDD00]"
+                  />
+                </div>
+
+                {/* Color Hex & Color Picker */}
+                <div className="sm:col-span-3">
+                  <label className="block text-[10px] font-bold uppercase text-neutral-400 mb-1">
+                    Amostra / Tom
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={newColorHex}
+                      onChange={(e) => setNewColorHex(e.target.value)}
+                      className="w-9 h-8 rounded-lg bg-neutral-900 border border-neutral-700 cursor-pointer p-0.5"
+                    />
+                    <input
+                      type="text"
+                      value={newColorHex}
+                      onChange={(e) => setNewColorHex(e.target.value)}
+                      placeholder="#000000"
+                      className="w-full px-2.5 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-xs font-mono text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFDD00]"
+                    />
+                  </div>
+                </div>
+
+                {/* Image URL for this color */}
+                <div className="sm:col-span-5">
+                  <label className="block text-[10px] font-bold uppercase text-neutral-400 mb-1">
+                    URL da Foto desta Cor
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={newColorImage}
+                      onChange={(e) => setNewColorImage(e.target.value)}
+                      placeholder="URL da imagem (ou usa a principal)"
+                      className="flex-1 px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFDD00]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddColor}
+                      disabled={!newColorName.trim()}
+                      className="px-3.5 py-2 bg-[#FFDD00] hover:bg-[#FFE838] text-black font-black text-xs uppercase tracking-wider rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all flex-shrink-0"
+                    >
+                      Adicionar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* List of configured colors */}
+            {colors.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                {colors.map((c, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-2.5 bg-neutral-950/70 border border-neutral-800 rounded-xl group hover:border-neutral-700 transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-10 h-10 rounded-lg bg-white p-1 border border-neutral-700 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                        <img src={c.image} alt={c.name} className="w-full h-full object-contain" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="w-3.5 h-3.5 rounded-full border border-white/20 shadow-xs flex-shrink-0"
+                            style={{ backgroundColor: c.hex || '#000000' }}
+                          />
+                          <p className="text-xs font-black text-white truncate">{c.name}</p>
+                        </div>
+                        <p className="text-[10px] text-neutral-400 font-mono truncate">{c.hex || '#000000'}</p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveColor(idx)}
+                      className="text-neutral-500 hover:text-red-400 p-1.5 rounded-lg hover:bg-neutral-800 transition-colors"
+                      title="Remover cor"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4 px-3 border border-dashed border-neutral-800 rounded-xl bg-neutral-950/20 text-neutral-500 text-xs">
+                Nenhuma variação de cor configurada. O produto usará a fotografia principal por padrão.
+              </div>
+            )}
           </div>
 
           {/* SECTOR 5: TAMANHOS ADAPTÁVEIS */}

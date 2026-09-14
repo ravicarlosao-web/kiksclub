@@ -15,6 +15,42 @@ export const SNEAKERS: Sneaker[] = [
       'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?w=800&auto=format&fit=crop&q=80'
     ],
+    colors: [
+      {
+        name: 'Branco Monogram',
+        hex: '#F3F4F6',
+        image: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800&auto=format&fit=crop&q=80',
+        gallery: [
+          'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800&auto=format&fit=crop&q=80',
+          'https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?w=800&auto=format&fit=crop&q=80'
+        ]
+      },
+      {
+        name: 'Azul Celestial',
+        hex: '#3B82F6',
+        image: 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=800&auto=format&fit=crop&q=80',
+        gallery: [
+          'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=800&auto=format&fit=crop&q=80',
+          'https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?w=800&auto=format&fit=crop&q=80'
+        ]
+      },
+      {
+        name: 'Preto Noite',
+        hex: '#18181B',
+        image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop&q=80',
+        gallery: [
+          'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop&q=80'
+        ]
+      },
+      {
+        name: 'Azul Marinho Denim',
+        hex: '#1E3A8A',
+        image: 'https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?w=800&auto=format&fit=crop&q=80',
+        gallery: [
+          'https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?w=800&auto=format&fit=crop&q=80'
+        ]
+      }
+    ],
     sizes: [38, 39, 40, 41, 42, 43, 44, 45],
     inStock: true,
     featured: true,
@@ -95,6 +131,23 @@ export const SNEAKERS: Sneaker[] = [
     originalPrice: 150.00,
     discountPercentage: 40,
     image: 'https://images.unsplash.com/photo-1514989940723-e8e51635b782?w=800&auto=format&fit=crop&q=80',
+    colors: [
+      {
+        name: 'Preto Ônix',
+        hex: '#111827',
+        image: 'https://images.unsplash.com/photo-1514989940723-e8e51635b782?w=800&auto=format&fit=crop&q=80'
+      },
+      {
+        name: 'Verde Veneno',
+        hex: '#10B981',
+        image: 'https://images.unsplash.com/photo-1587563871167-1ee9c731aefb?w=800&auto=format&fit=crop&q=80'
+      },
+      {
+        name: 'Cinzento Platina',
+        hex: '#9CA3AF',
+        image: 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=800&auto=format&fit=crop&q=80'
+      }
+    ],
     sizes: [38, 39, 40, 41, 42, 43, 44, 45],
     inStock: true,
     featured: true,
@@ -154,6 +207,23 @@ export const SNEAKERS: Sneaker[] = [
     originalPrice: 110.00,
     discountPercentage: 27,
     image: 'https://images.unsplash.com/photo-1552346154-21d32810aba3?w=800&auto=format&fit=crop&q=80',
+    colors: [
+      {
+        name: 'Preto & Branco',
+        hex: '#1E293B',
+        image: 'https://images.unsplash.com/photo-1552346154-21d32810aba3?w=800&auto=format&fit=crop&q=80'
+      },
+      {
+        name: 'Vermelho Chicago',
+        hex: '#DC2626',
+        image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=800&auto=format&fit=crop&q=80'
+      },
+      {
+        name: 'Verde Vintage',
+        hex: '#047857',
+        image: 'https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?w=800&auto=format&fit=crop&q=80'
+      }
+    ],
     sizes: [38, 39, 40, 41, 42, 43, 44, 45, 46],
     inStock: true,
     featured: true,
@@ -172,6 +242,23 @@ export const SNEAKERS: Sneaker[] = [
     originalPrice: 300.00,
     discountPercentage: 70,
     image: 'https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?w=800&auto=format&fit=crop&q=80',
+    colors: [
+      {
+        name: 'Branco Azael',
+        hex: '#E2E8F0',
+        image: 'https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?w=800&auto=format&fit=crop&q=80'
+      },
+      {
+        name: 'Triple Black',
+        hex: '#0F172A',
+        image: 'https://images.unsplash.com/photo-1512374382149-233c42b661ac?w=800&auto=format&fit=crop&q=80'
+      },
+      {
+        name: 'Creme Boost',
+        hex: '#FDFBF7',
+        image: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=800&auto=format&fit=crop&q=80'
+      }
+    ],
     sizes: [38, 39, 40, 41, 42, 43, 44, 45],
     inStock: true,
     featured: true,
@@ -230,6 +317,23 @@ export const SNEAKERS: Sneaker[] = [
     originalPrice: 230.00,
     discountPercentage: 61,
     image: 'https://images.unsplash.com/photo-1582588678413-dbf45f4823e9?w=800&auto=format&fit=crop&q=80',
+    colors: [
+      {
+        name: 'Bege Lundmark',
+        hex: '#E7E0D3',
+        image: 'https://images.unsplash.com/photo-1582588678413-dbf45f4823e9?w=800&auto=format&fit=crop&q=80'
+      },
+      {
+        name: 'Onyx Black',
+        hex: '#18181B',
+        image: 'https://images.unsplash.com/photo-1512374382149-233c42b661ac?w=800&auto=format&fit=crop&q=80'
+      },
+      {
+        name: 'Bone White',
+        hex: '#F8F9FA',
+        image: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=800&auto=format&fit=crop&q=80'
+      }
+    ],
     sizes: [36, 37, 38, 39, 40, 41, 42, 43, 44, 45],
     inStock: true,
     featured: true,
@@ -247,6 +351,23 @@ export const SNEAKERS: Sneaker[] = [
     originalPrice: 190.00,
     discountPercentage: 47,
     image: 'https://images.unsplash.com/photo-1556906781-9a412961c28c?w=800&auto=format&fit=crop&q=80',
+    colors: [
+      {
+        name: 'Chicago Red',
+        hex: '#DC2626',
+        image: 'https://images.unsplash.com/photo-1556906781-9a412961c28c?w=800&auto=format&fit=crop&q=80'
+      },
+      {
+        name: 'Royal Blue',
+        hex: '#1D4ED8',
+        image: 'https://images.unsplash.com/photo-1515955656352-a1fa3ffcd111?w=800&auto=format&fit=crop&q=80'
+      },
+      {
+        name: 'Shadow Grey',
+        hex: '#4B5563',
+        image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop&q=80'
+      }
+    ],
     sizes: [38, 39, 40, 41, 42, 43, 44, 45, 46],
     inStock: true,
     featured: true,
@@ -263,6 +384,23 @@ export const SNEAKERS: Sneaker[] = [
     originalPrice: 210.00,
     discountPercentage: 48,
     image: 'https://images.unsplash.com/photo-1579338559194-a162d19bf842?w=800&auto=format&fit=crop&q=80',
+    colors: [
+      {
+        name: 'Black Cat',
+        hex: '#111827',
+        image: 'https://images.unsplash.com/photo-1579338559194-a162d19bf842?w=800&auto=format&fit=crop&q=80'
+      },
+      {
+        name: 'Military Blue',
+        hex: '#1E40AF',
+        image: 'https://images.unsplash.com/photo-1552346154-21d32810aba3?w=800&auto=format&fit=crop&q=80'
+      },
+      {
+        name: 'White Cement',
+        hex: '#E5E7EB',
+        image: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800&auto=format&fit=crop&q=80'
+      }
+    ],
     sizes: [39, 40, 41, 42, 43, 44, 45],
     inStock: true,
     featured: true,

@@ -22,6 +22,13 @@ export interface Brand {
   createdAt?: string;
 }
 
+export interface ProductColor {
+  name: string;        // ex: "Preto", "Branco / Cinza", "Azul Royal"
+  hex?: string;        // código hex ou CSS para a amostra de cor (ex: "#000000")
+  image: string;       // URL da foto do produto nesta cor
+  gallery?: string[];  // fotos adicionais desta cor específica (opcional)
+}
+
 export interface Sneaker {
   id: string;
   name: string;
@@ -36,6 +43,7 @@ export interface Sneaker {
   discountPercentage: number;
   image: string;
   gallery?: string[];
+  colors?: ProductColor[];
   sizes: (number | string)[];
   sizeStock?: Record<string, number>; // Quantidade real por tamanho (ex: { '42': 2, '41': 0 })
   sizeType?: 'shoes' | 'clothing' | 'one_size';
@@ -51,6 +59,8 @@ export type Product = Sneaker;
 export interface CartItem {
   product: Sneaker;
   size: number | string;
+  color?: string;
+  colorImage?: string;
   quantity: number;
 }
 
@@ -68,6 +78,7 @@ export interface OrderItem {
   brand: string;
   image: string;
   size: number | string;
+  color?: string;
   quantity: number;
   price: number;
 }

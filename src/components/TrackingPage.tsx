@@ -235,7 +235,7 @@ export const TrackingPage: React.FC<TrackingPageProps> = ({
                       <div className="min-w-0">
                         <span className="text-[9px] font-black uppercase text-neutral-600 block">{item.brand}</span>
                         <h4 className="text-xs font-bold text-neutral-900 truncate">{item.name}</h4>
-                        <span className="text-[11px] text-neutral-500">Tam EU: {item.size} • Qtd: {item.quantity}</span>
+                        <span className="text-[11px] text-neutral-500">{item.color ? `Cor: ${item.color} • ` : ''}Tam EU: {item.size} • Qtd: {item.quantity}</span>
                       </div>
                     </div>
                   ))}
