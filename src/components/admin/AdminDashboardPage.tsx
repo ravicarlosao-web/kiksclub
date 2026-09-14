@@ -1177,23 +1177,34 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
                         {/* Items */}
                         <td className="py-3.5 px-4">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2.5">
                             {order.items.slice(0, 2).map((it, idx) => (
-                              <img
-                                key={idx}
-                                src={it.image}
-                                alt={it.name}
-                                className="w-10 h-10 object-cover rounded-lg border border-neutral-800"
-                                title={`${it.name} (Tam EU: ${it.size})`}
-                              />
+                              <div key={idx} className="relative w-11 h-11 rounded-xl border border-neutral-800 bg-neutral-900/90 overflow-hidden flex-shrink-0 flex items-center justify-center p-0.5">
+                                <img
+                                  src={it.image}
+                                  alt={it.name}
+                                  className="w-full h-full object-contain"
+                                  title={`${it.name}${it.color ? ` (Cor: ${it.color})` : ''} - Tam EU: ${it.size}`}
+                                />
+                              </div>
                             ))}
-                            <div>
-                              <span className="font-bold text-white block">
+                            <div className="min-w-0">
+                              <span className="font-bold text-white block text-xs">
                                 {order.items.length} {order.items.length === 1 ? 'item' : 'itens'}
                               </span>
-                              <span className="text-[10px] text-neutral-400">
-                                Tam: {order.items.map((i) => i.size).join(', ')}
-                              </span>
+                              <div className="flex flex-wrap items-center gap-1 text-[10px] text-neutral-400 mt-0.5">
+                                {order.items.map((i, iIdx) => (
+                                  <span key={iIdx} className="inline-flex items-center gap-1">
+                                    {i.color && (
+                                      <span className="px-1 py-0.2 rounded bg-[#FFDD00]/15 text-[#FFDD00] font-bold">
+                                        {i.color}
+                                      </span>
+                                    )}
+                                    <span>EU {i.size}</span>
+                                    {iIdx < order.items.length - 1 && <span className="text-neutral-600">·</span>}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
                           </div>
                         </td>

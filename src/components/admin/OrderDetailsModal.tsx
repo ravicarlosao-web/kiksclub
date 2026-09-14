@@ -62,8 +62,11 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   // Build clean WhatsApp message to customer
   const cleanPhone = order.phone.replace(/\D/g, '');
   const internationalPhone = cleanPhone.startsWith('351') ? cleanPhone : `351${cleanPhone}`;
+  const itemsSummary = order.items
+    .map((it) => `${it.name}${it.color ? ` [Cor: ${it.color}]` : ''} (Tam EU: ${it.size})`)
+    .join('; ');
   const whatsappMessage = encodeURIComponent(
-    `Olá ${order.customerName}! Aqui é da equipa KICKS CLUB (kicksclub.pt) a respeito da sua encomenda ${order.id}. O estado atual é: ${currentStatus}. Código de rastreio CTT: ${trackingCodeInput}. Estamos à sua inteira disposição!`
+    `Olá ${order.customerName}! Aqui é da equipa KICKS CLUB (kicksclub.pt) a respeito da sua encomenda ${order.id}.\nArtigos: ${itemsSummary}\nEstado atual: ${currentStatus}.\nCódigo de rastreio CTT: ${trackingCodeInput}.\nEstamos à sua inteira disposição!`
   );
 
   return (
@@ -258,30 +261,41 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
 
             <div className="space-y-2.5">
               {order.items.map((item, idx) => (
-                <div key={idx} className="flex items-center gap-3 p-2.5 bg-black/40 border border-neutral-800/80 rounded-xl">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-14 h-14 object-cover rounded-lg border border-neutral-800 flex-shrink-0"
-                  />
+                <div key={idx} className="flex items-center gap-3.5 p-3 bg-black/50 border border-neutral-800 rounded-xl hover:border-neutral-700 transition-colors">
+                  <div className="w-16 h-16 rounded-xl bg-white/5 border border-neutral-700 p-1 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                    <img
+                      src={item.image}
+                      alt={`${item.name} - ${item.color || ''}`}
+                      className="w-full h-full object-contain filter drop-shadow"
+                    />
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <span className="text-[9px] font-black uppercase text-[#FFDD00] block tracking-wider">
-                      {item.brand}
-                    </span>
-                    <h5 className="text-xs font-bold text-white truncate">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-[9px] font-black uppercase text-[#FFDD00] tracking-wider">
+                        {item.brand}
+                      </span>
+                      {item.color ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#FFDD00]/15 text-[#FFDD00] border border-[#FFDD00]/30 font-black text-[10px] uppercase tracking-wide">
+                          <span>Cor:</span>
+                          <span className="text-white font-extrabold">{item.color}</span>
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-neutral-500 font-medium">Cor Padrão</span>
+                      )}
+                    </div>
+                    <h5 className="text-xs font-black text-white truncate">
                       {item.name}
                     </h5>
-                    <div className="flex items-center gap-3 text-[11px] text-neutral-400 mt-0.5">
-                      {item.color && <span>Cor: <strong className="text-[#FFDD00]">{item.color}</strong></span>}
-                      <span>Tamanho EU: <strong className="text-white">{item.size}</strong></span>
-                      <span>Qtd: <strong className="text-white">{item.quantity}</strong></span>
+                    <div className="flex items-center gap-3 text-[11px] text-neutral-400 mt-1">
+                      <span>Tamanho EU: <strong className="text-white bg-neutral-800 px-1.5 py-0.5 rounded border border-neutral-700">{item.size}</strong></span>
+                      <span>Qtd: <strong className="text-white font-bold">{item.quantity}</strong></span>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <span className="text-xs font-black text-white block">
+                  <div className="text-right flex-shrink-0">
+                    <span className="text-sm font-black text-[#FFDD00] block">
                       {(item.price * item.quantity).toFixed(2)}€
                     </span>
-                    <span className="text-[10px] text-neutral-500">
+                    <span className="text-[10px] text-neutral-400">
                       {item.price.toFixed(2)}€ / cada
                     </span>
                   </div>

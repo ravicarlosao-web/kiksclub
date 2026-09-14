@@ -30,7 +30,7 @@ interface CartDrawerProps {
   onClearCart: () => void;
   onOpenTrackingWithCode?: (code: string) => void;
   directSneaker?: Sneaker | null;
-  onAddDirectSneaker?: (sneaker: Sneaker, size: number | string) => void;
+  onAddDirectSneaker?: (sneaker: Sneaker, size: number | string, color?: string, colorImage?: string) => void;
   onOrderCreated?: (order: Order) => void;
   onOpenPolicies?: (tab: PolicyTab) => void;
   onOpenPrivacy?: () => void;
@@ -65,6 +65,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   // Direct sneaker selection state
   const [directSize, setDirectSize] = useState<number>(41);
   const [directQty, setDirectQty] = useState<number>(1);
+  const [directColor, setDirectColor] = useState<string>('');
+  const [directColorImage, setDirectColorImage] = useState<string>('');
   const [selectedImage, setSelectedImage] = useState<string>('');
 
   // Editing size inline for an item in cart
@@ -85,11 +87,30 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [orderCode, setOrderCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Helper para obter com precisão a foto da cor selecionada para qualquer item
+  const getItemImage = (item: CartItem): string => {
+    if (item.colorImage && item.colorImage.trim()) {
+      return item.colorImage;
+    }
+    if (item.color && item.product.colors && item.product.colors.length > 0) {
+      const match = item.product.colors.find(
+        (c) => c.name.toLowerCase() === item.color?.toLowerCase()
+      );
+      if (match?.image) {
+        return match.image;
+      }
+    }
+    return item.product.image;
+  };
+
   useEffect(() => {
     if (directSneaker) {
       setDirectSize(41);
       setDirectQty(1);
-      setSelectedImage(directSneaker.image);
+      const defaultColor = directSneaker.colors && directSneaker.colors.length > 0 ? directSneaker.colors[0] : null;
+      setDirectColor(defaultColor ? defaultColor.name : '');
+      setDirectColorImage(defaultColor ? defaultColor.image : directSneaker.image);
+      setSelectedImage(defaultColor ? defaultColor.image : directSneaker.image);
       setStep('selection');
     }
   }, [directSneaker]);
@@ -104,7 +125,13 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
   // Calculate Subtotals & Totals
   const effectiveItems = directSneaker 
-    ? [{ product: directSneaker, size: directSize, quantity: directQty }]
+    ? [{ 
+        product: directSneaker, 
+        size: directSize, 
+        quantity: directQty,
+        color: directColor || undefined,
+        colorImage: directColorImage || directSneaker.image
+      }]
     : items;
 
   const subtotal = effectiveItems.reduce(
@@ -148,7 +175,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
   const handleProceedToDelivery = () => {
     if (directSneaker && onAddDirectSneaker) {
-      onAddDirectSneaker(directSneaker, directSize);
+      onAddDirectSneaker(directSneaker, directSize, directColor, directColorImage);
     }
     setStep('delivery');
   };
@@ -166,7 +193,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         productId: item.product.id,
         name: item.product.name,
         brand: item.product.brand,
-        image: item.colorImage || item.product.image,
+        image: getItemImage(item),
         size: item.size,
         color: item.color,
         quantity: item.quantity,
@@ -373,6 +400,47 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
                     </div>
 
+                    {/* COLOR SELECTION FOR DIRECT SNEAKER */}
+                    {directSneaker.colors && directSneaker.colors.length > 0 && (
+                      <div className="bg-neutral-50 p-3 rounded-2xl border border-neutral-200 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[11px] font-black uppercase tracking-wider text-black flex items-center gap-1.5">
+                            <span>Cor Selecionada:</span>
+                            <span className="bg-black text-[#FFDD00] px-2 py-0.5 rounded text-[10px] font-bold">
+                              {directColor || directSneaker.colors[0].name}
+                            </span>
+                          </label>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {directSneaker.colors.map((c, cIdx) => {
+                            const isSelected = (directColor || directSneaker.colors![0].name) === c.name;
+                            return (
+                              <button
+                                key={cIdx}
+                                type="button"
+                                onClick={() => {
+                                  setDirectColor(c.name);
+                                  setDirectColorImage(c.image);
+                                  setSelectedImage(c.image);
+                                }}
+                                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all ${
+                                  isSelected
+                                    ? 'border-black bg-neutral-900 text-white shadow-xs ring-2 ring-[#FFDD00]/60'
+                                    : 'border-neutral-200 bg-white text-neutral-800 hover:border-neutral-400'
+                                }`}
+                              >
+                                <span
+                                  className="w-3.5 h-3.5 rounded-full border border-black/10 shadow-xs flex-shrink-0"
+                                  style={{ backgroundColor: c.hex || '#000000' }}
+                                />
+                                <span>{c.name}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     {/* SIZE SELECTION BY NUMBER - Compact, clean and no excess height */}
                     <div className="bg-neutral-50 p-3 rounded-2xl border border-neutral-200 space-y-2.5">
                       <div className="flex items-center justify-between">
@@ -502,12 +570,21 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                           className="p-4 bg-neutral-50 rounded-2xl border border-neutral-200 relative group transition-all"
                         >
                           <div className="flex gap-4">
-                            <div className="w-20 h-20 bg-white rounded-xl p-1.5 border border-neutral-200 flex-shrink-0 flex items-center justify-center">
+                            <div className="w-20 h-20 bg-white rounded-xl p-1.5 border border-neutral-200 flex-shrink-0 flex items-center justify-center relative overflow-hidden">
                               <img 
-                                src={item.colorImage || item.product.image} 
-                                alt={item.product.name} 
+                                src={getItemImage(item)} 
+                                alt={`${item.product.name} - ${item.color || ''}`} 
                                 className="w-full h-full object-contain"
                               />
+                              {item.color && (
+                                <span 
+                                  className="absolute bottom-1 right-1 w-3.5 h-3.5 rounded-full border-2 border-white shadow-xs"
+                                  style={{
+                                    backgroundColor: item.product.colors?.find(c => c.name.toLowerCase() === item.color?.toLowerCase())?.hex || '#111827'
+                                  }}
+                                  title={`Cor: ${item.color}`}
+                                />
+                              )}
                             </div>
 
                             <div className="flex-1 flex flex-col justify-between">
@@ -521,8 +598,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                                 
                                 <div className="mt-1 flex items-center gap-1.5 flex-wrap">
                                   {item.color && (
-                                    <span className="text-[10px] font-bold bg-neutral-900 text-white px-2 py-0.5 rounded border border-neutral-700">
-                                      Cor: {item.color}
+                                    <span className="inline-flex items-center gap-1.5 text-[10px] font-bold bg-neutral-900 text-[#FFDD00] px-2 py-0.5 rounded border border-neutral-700 shadow-xs">
+                                      <span 
+                                        className="w-2 h-2 rounded-full border border-white/40 flex-shrink-0"
+                                        style={{
+                                          backgroundColor: item.product.colors?.find(c => c.name.toLowerCase() === item.color?.toLowerCase())?.hex || '#FFDD00'
+                                        }}
+                                      />
+                                      <span>Cor: {item.color}</span>
                                     </span>
                                   )}
                                   <span className="text-xs font-bold text-neutral-600">Tam:</span>

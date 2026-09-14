@@ -416,20 +416,32 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                         key={idx}
                         type="button"
                         onClick={() => handleSelectColor(c)}
-                        title={`Cor: ${c.name}`}
-                        className={`group relative flex items-center gap-2.5 px-3 py-2 rounded-xl border-2 transition-all cursor-pointer ${
+                        title={`Escolher cor: ${c.name}`}
+                        className={`group relative flex items-center gap-2 px-3 py-1.5 rounded-xl border-2 transition-all cursor-pointer ${
                           isSelected
-                            ? 'border-black bg-neutral-900 text-white shadow-md ring-2 ring-[#FFDD00]/50'
-                            : 'border-neutral-200 bg-white text-neutral-800 hover:border-neutral-400 hover:shadow-xs'
+                            ? 'border-black bg-neutral-950 text-white shadow-md ring-2 ring-[#FFDD00]/60 scale-102'
+                            : 'border-neutral-200 bg-white text-neutral-800 hover:border-neutral-400 hover:bg-neutral-50 hover:shadow-xs'
                         }`}
                       >
+                        {/* Miniature shoe image preview for this specific color */}
+                        {c.image && (
+                          <div className={`w-8 h-8 rounded-lg p-0.5 overflow-hidden flex-shrink-0 border flex items-center justify-center ${
+                            isSelected ? 'bg-neutral-800 border-neutral-700' : 'bg-neutral-100 border-neutral-200'
+                          }`}>
+                            <img
+                              src={c.image}
+                              alt={c.name}
+                              className="w-full h-full object-contain group-hover:scale-105 transition-transform"
+                            />
+                          </div>
+                        )}
                         {/* Mini color swatch circle */}
                         <span
-                          className="w-5 h-5 rounded-full border border-black/10 shadow-inner flex-shrink-0 flex items-center justify-center overflow-hidden"
+                          className="w-4 h-4 rounded-full border border-black/10 shadow-inner flex-shrink-0 flex items-center justify-center overflow-hidden"
                           style={{ backgroundColor: c.hex || '#000000' }}
                         >
                           {isSelected && (
-                            <Check className={`w-3 h-3 stroke-[3] ${c.hex && (c.hex.toLowerCase() === '#ffffff' || c.hex.toLowerCase() === '#f3f4f6' || c.hex.toLowerCase() === '#e5e7eb' || c.hex.toLowerCase() === '#fdfbf7' || c.hex.toLowerCase() === '#f8f9fa') ? 'text-black' : 'text-white'}`} />
+                            <Check className={`w-2.5 h-2.5 stroke-[3] ${c.hex && (c.hex.toLowerCase() === '#ffffff' || c.hex.toLowerCase() === '#f3f4f6' || c.hex.toLowerCase() === '#e5e7eb' || c.hex.toLowerCase() === '#fdfbf7' || c.hex.toLowerCase() === '#f8f9fa') ? 'text-black' : 'text-white'}`} />
                           )}
                         </span>
                         <span className="text-xs font-bold whitespace-nowrap">
@@ -826,9 +838,16 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
       {/* Mobile Sticky Add to Cart */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-neutral-200 px-4 py-3 safe-area-inset-bottom shadow-2xl">
         <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-neutral-50 border border-neutral-200 p-1 flex-shrink-0 flex items-center justify-center">
+            <img
+              src={selectedColor?.image || activeImage || product.image}
+              alt={product.name}
+              className="w-full h-full object-contain"
+            />
+          </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs text-neutral-500 font-medium truncate">
-              {product.brand} {selectedColor ? `· Cor: ${selectedColor.name}` : ''} · Tam: <strong className="text-black">{selectedSize}</strong>
+              {product.brand} {selectedColor ? `· ${selectedColor.name}` : ''} · Tam: <strong className="text-black">{selectedSize}</strong>
             </p>
             <p className="text-base font-black text-black">{product.price.toFixed(2).replace('.', ',')}€</p>
           </div>

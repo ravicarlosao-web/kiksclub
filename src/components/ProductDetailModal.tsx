@@ -254,13 +254,24 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                         key={idx}
                         type="button"
                         onClick={() => handleSelectColor(c)}
-                        title={`Cor: ${c.name}`}
+                        title={`Escolher cor: ${c.name}`}
                         className={`group relative flex items-center gap-2 px-2.5 py-1.5 rounded-xl border-2 transition-all cursor-pointer ${
                           isSelected
-                            ? 'border-black bg-neutral-900 text-white shadow-xs ring-2 ring-[#FFDD00]/50'
-                            : 'border-neutral-200 bg-white text-neutral-800 hover:border-neutral-400'
+                            ? 'border-black bg-neutral-950 text-white shadow-xs ring-2 ring-[#FFDD00]/60 scale-102'
+                            : 'border-neutral-200 bg-white text-neutral-800 hover:border-neutral-400 hover:bg-neutral-50'
                         }`}
                       >
+                        {c.image && (
+                          <div className={`w-7 h-7 rounded-lg p-0.5 overflow-hidden flex-shrink-0 border flex items-center justify-center ${
+                            isSelected ? 'bg-neutral-800 border-neutral-700' : 'bg-neutral-100 border-neutral-200'
+                          }`}>
+                            <img
+                              src={c.image}
+                              alt={c.name}
+                              className="w-full h-full object-contain group-hover:scale-105 transition-transform"
+                            />
+                          </div>
+                        )}
                         <span
                           className="w-4 h-4 rounded-full border border-black/10 shadow-inner flex-shrink-0 flex items-center justify-center overflow-hidden"
                           style={{ backgroundColor: c.hex || '#000000' }}

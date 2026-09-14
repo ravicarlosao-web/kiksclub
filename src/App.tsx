@@ -363,8 +363,9 @@ export default function App() {
     color?: string,
     colorImage?: string
   ) => {
+    const matchedColorObj = product.colors?.find(c => c.name === color);
     const chosenColor = color || (product.colors && product.colors.length > 0 ? product.colors[0].name : undefined);
-    const chosenImage = colorImage || (product.colors && product.colors.length > 0 ? product.colors[0].image : product.image);
+    const chosenImage = colorImage || (matchedColorObj ? matchedColorObj.image : (product.colors && product.colors.length > 0 ? product.colors[0].image : product.image));
 
     setCart((prev) => {
       const idx = prev.findIndex(
@@ -376,6 +377,9 @@ export default function App() {
       if (idx > -1) {
         const updated = [...prev];
         updated[idx].quantity += quantity;
+        if (chosenImage) {
+          updated[idx].colorImage = chosenImage;
+        }
         return updated;
       }
       return [
@@ -938,7 +942,7 @@ export default function App() {
         onOpenTrackingWithCode={handleOpenTrackingWithCode}
         onOrderCreated={handleOrderCreated}
         directSneaker={directSneakerForDrawer}
-        onAddDirectSneaker={(p, size) => handleAddToCart(p, size, 1)}
+        onAddDirectSneaker={(p, size, color, colorImage) => handleAddToCart(p, size, 1, color, colorImage)}
         onOpenPolicies={handleOpenPolicies}
         onOpenPrivacy={handleNavigateToPrivacy}
       />
