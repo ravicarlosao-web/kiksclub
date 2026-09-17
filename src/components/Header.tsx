@@ -11,7 +11,15 @@ import {
   Sparkles,
   Home,
   Check,
-  ShieldCheck
+  ShieldCheck,
+  Footprints,
+  Shirt,
+  Watch,
+  Headphones,
+  Gem,
+  Package,
+  ChevronRight,
+  Layers
 } from 'lucide-react';
 import { Sneaker, StoreCategory } from '../types';
 import { INITIAL_CATEGORIES } from '../data/categories';
@@ -226,54 +234,113 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-[#181818] border-b border-neutral-800 px-4 pt-2 pb-6 space-y-3 animate-in slide-in-from-top-4 duration-200">
-          <button
-            onClick={() => {
-              onSelectCategory('all');
-              setMobileMenuOpen(false);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            className="w-full flex items-center gap-3 py-2.5 text-sm font-bold text-white hover:text-[#FFDD00] border-b border-neutral-800"
-          >
-            <Home className="w-4 h-4 text-[#FFDD00]" />
-            INÍCIO
-          </button>
+        <div className="lg:hidden bg-[#181818] border-b border-neutral-800 px-4 pt-2 pb-6 animate-in slide-in-from-top-4 duration-200">
 
-          <button
-            onClick={() => {
-              onOpenHelp();
-              setMobileMenuOpen(false);
-            }}
-            className="w-full flex items-center gap-3 py-2.5 text-sm font-bold text-white hover:text-[#FFDD00] border-b border-neutral-800"
-          >
-            <HelpCircle className="w-4 h-4 text-[#FFDD00]" />
-            AJUDA & SUPORTE
-          </button>
-
-          {onOpenPolicies && (
+          {/* Nav Links */}
+          <div className="space-y-0 mb-4">
             <button
               onClick={() => {
-                onOpenPolicies('sizes');
+                onSelectCategory('all');
+                setMobileMenuOpen(false);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="w-full flex items-center gap-3 py-2.5 text-sm font-bold text-white hover:text-[#FFDD00] border-b border-neutral-800"
+            >
+              <Home className="w-4 h-4 text-[#FFDD00]" />
+              INÍCIO
+            </button>
+
+            <button
+              onClick={() => {
+                onOpenHelp();
                 setMobileMenuOpen(false);
               }}
               className="w-full flex items-center gap-3 py-2.5 text-sm font-bold text-white hover:text-[#FFDD00] border-b border-neutral-800"
             >
-              <ShieldCheck className="w-4 h-4 text-[#FFDD00]" />
-              POLÍTICAS & CONFIANÇA
+              <HelpCircle className="w-4 h-4 text-[#FFDD00]" />
+              AJUDA & SUPORTE
             </button>
-          )}
 
-          {/* Tracking */}
-          <button
-            onClick={() => {
-              onOpenTracking();
-              setMobileMenuOpen(false);
-            }}
-            className="w-full flex items-center gap-3 py-2.5 text-sm font-bold text-white hover:text-[#FFDD00]"
-          >
-            <Truck className="w-4 h-4 text-[#FFDD00]" />
-            RASTREAR ENCOMENDA
-          </button>
+            {onOpenPolicies && (
+              <button
+                onClick={() => {
+                  onOpenPolicies('sizes');
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-3 py-2.5 text-sm font-bold text-white hover:text-[#FFDD00] border-b border-neutral-800"
+              >
+                <ShieldCheck className="w-4 h-4 text-[#FFDD00]" />
+                POLÍTICAS & CONFIANÇA
+              </button>
+            )}
+
+            <button
+              onClick={() => {
+                onOpenTracking();
+                setMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center gap-3 py-2.5 text-sm font-bold text-white hover:text-[#FFDD00] border-b border-neutral-800"
+            >
+              <Truck className="w-4 h-4 text-[#FFDD00]" />
+              RASTREAR ENCOMENDA
+            </button>
+          </div>
+
+          {/* Categories Section */}
+          {categories && categories.length > 0 && (
+            <div>
+              {/* Section label */}
+              <div className="flex items-center gap-2 mb-3 pt-1">
+                <Layers className="w-3.5 h-3.5 text-[#FFDD00]" />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">
+                  DEPARTAMENTOS
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {categories.map((cat) => {
+                  const renderCatIcon = () => {
+                    switch (cat.icon?.toLowerCase()) {
+                      case 'footprints': return <Footprints className="w-4 h-4" />;
+                      case 'shirt':      return <Shirt className="w-4 h-4" />;
+                      case 'sparkles':   return <Sparkles className="w-4 h-4" />;
+                      case 'watch':      return <Watch className="w-4 h-4" />;
+                      case 'headphones': return <Headphones className="w-4 h-4" />;
+                      case 'gem':        return <Gem className="w-4 h-4" />;
+                      default:           return <Package className="w-4 h-4" />;
+                    }
+                  };
+
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => {
+                        onSelectCategory(cat.id);
+                        setMobileMenuOpen(false);
+                        setTimeout(() => {
+                          const el = document.getElementById(`section-${cat.id}`);
+                          if (el) {
+                            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }
+                        }, 100);
+                      }}
+                      className="flex items-center gap-2.5 p-3 rounded-xl bg-black/50 border border-neutral-800 hover:border-[#FFDD00]/50 hover:bg-neutral-900 text-white hover:text-[#FFDD00] transition-all text-left group"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center text-[#FFDD00] group-hover:border-[#FFDD00]/40 flex-shrink-0">
+                        {renderCatIcon()}
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[11px] font-black uppercase tracking-tight leading-tight block truncate">
+                          {cat.name}
+                        </span>
+                      </div>
+                      <ChevronRight className="w-3 h-3 text-neutral-600 group-hover:text-[#FFDD00] ml-auto flex-shrink-0 group-hover:translate-x-0.5 transition-transform" />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </header>
