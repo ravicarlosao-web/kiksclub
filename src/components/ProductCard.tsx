@@ -29,7 +29,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   return (
     <article 
-      className="group relative bg-white rounded-2xl p-4 sm:p-4.5 flex flex-col justify-between border border-neutral-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_25px_rgba(0,0,0,0.09)] transition-all duration-300 select-none h-full"
+      className="group relative bg-white rounded-2xl p-2.5 sm:p-4 flex flex-col justify-between border border-neutral-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_25px_rgba(0,0,0,0.09)] transition-all duration-300 select-none h-full overflow-hidden"
       itemScope 
       itemType="https://schema.org/Product"
     >
@@ -43,11 +43,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       <div className="flex items-center justify-between z-10 w-full mb-1">
         {/* Discount or Sold-out Badge */}
         {isAvailable ? (
-          <span className="bg-[#FF3333] text-white text-[11px] sm:text-xs font-black px-2.5 py-1 rounded-[6px] tracking-wide uppercase leading-none shadow-xs">
+          <span className="bg-[#FF3333] text-white text-[9px] sm:text-xs font-black px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-[6px] tracking-wide uppercase leading-none shadow-xs">
             -{product.discountPercentage}% OFF
           </span>
         ) : (
-          <span className="bg-neutral-900 text-red-400 text-[10px] sm:text-[11px] font-black px-2 py-1 rounded-[6px] tracking-wider uppercase leading-none shadow-xs border border-red-500/30">
+          <span className="bg-neutral-900 text-red-400 text-[9px] sm:text-[11px] font-black px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-[6px] tracking-wider uppercase leading-none shadow-xs border border-red-500/30">
             ESGOTADO
           </span>
         )}
@@ -58,11 +58,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             e.stopPropagation();
             onToggleWishlist(product);
           }}
-          className="w-9 h-9 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-neutral-100/90 flex items-center justify-center hover:scale-110 active:scale-95 transition-transform"
+          className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-neutral-100/90 flex items-center justify-center hover:scale-110 active:scale-95 transition-transform"
           aria-label={isWishlisted ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
         >
           <Heart 
-            className={`w-4.5 h-4.5 transition-colors ${
+            className={`w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 transition-colors ${
               isWishlisted 
                 ? 'fill-red-500 text-red-500 stroke-red-500' 
                 : 'text-black stroke-[2] fill-transparent hover:text-red-500'
@@ -74,7 +74,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {/* Sneaker Image Container */}
       <div 
         onClick={() => onQuickView(product)}
-        className="relative w-full h-36 sm:h-44 flex items-center justify-center cursor-pointer my-2 overflow-hidden"
+        className="relative w-full h-28 sm:h-44 flex items-center justify-center cursor-pointer my-1.5 sm:my-2 overflow-hidden"
       >
         <img
           src={activeImage}
@@ -144,7 +144,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {/* Product Title: Deep Black */}
           <h3 
             onClick={() => onQuickView(product)}
-            className="text-[13px] sm:text-[14px] font-extrabold uppercase text-[#0B1A30] tracking-tight leading-snug line-clamp-2 min-h-[38px] cursor-pointer hover:text-[#CA8A04] transition-colors"
+            className="text-[11px] sm:text-[14px] font-extrabold uppercase text-[#0B1A30] tracking-tight leading-snug line-clamp-2 min-h-[32px] sm:min-h-[38px] cursor-pointer hover:text-[#CA8A04] transition-colors"
             title={product.name}
           >
             {product.name}
@@ -154,7 +154,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Price & Action Area with Offer Schema */}
         <div 
           onClick={() => onQuickView(product)}
-          className="flex items-center justify-between pt-3 mt-auto cursor-pointer border-t border-neutral-100"
+          className="flex items-center justify-between pt-2 sm:pt-3 mt-auto cursor-pointer border-t border-neutral-100"
           itemProp="offers" 
           itemScope 
           itemType="https://schema.org/Offer"
@@ -166,29 +166,29 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <meta itemProp="priceValidUntil" content="2026-12-31" />
 
           {/* Price Pair */}
-          <div className="flex items-baseline">
-            <span className="text-base sm:text-[17px] font-black text-[#0B1A30] tracking-tight font-condensed">
+          <div className="flex flex-col sm:flex-row sm:items-baseline min-w-0">
+            <span className="text-sm sm:text-[17px] font-black text-[#0B1A30] tracking-tight font-condensed leading-none">
               {product.price.toFixed(2).replace('.', ',')}€
             </span>
-            <span className="text-xs sm:text-[13px] font-medium text-[#8292A2] line-through ml-2">
+            <span className="text-[10px] sm:text-[13px] font-medium text-[#8292A2] line-through sm:ml-2 leading-none mt-0.5 sm:mt-0">
               {product.originalPrice.toFixed(2).replace('.', ',')}€
             </span>
           </div>
 
-          {/* Comprar Action Button */}
+          {/* Comprar Action Button — icon only on mobile, full text on sm+ */}
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               onQuickView(product);
             }}
-            className={`px-3 py-1.5 font-black text-xs uppercase tracking-wider rounded-lg flex items-center gap-1 font-condensed shadow-xs group-hover:scale-105 transition-all ${
+            className={`flex-shrink-0 px-2 sm:px-3 py-1.5 font-black text-[10px] sm:text-xs uppercase tracking-wider rounded-lg flex items-center gap-0.5 sm:gap-1 font-condensed shadow-xs group-hover:scale-105 transition-all ${
               isAvailable
                 ? 'bg-[#FFDD00] hover:bg-[#FFE838] text-black'
                 : 'bg-neutral-200 text-neutral-500 hover:bg-neutral-300'
             }`}
           >
-            <span>{isAvailable ? 'COMPRAR' : 'VER TAMANHOS'}</span>
+            <span className="hidden sm:inline">{isAvailable ? 'COMPRAR' : 'VER'}</span>
             <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
           </button>
         </div>
