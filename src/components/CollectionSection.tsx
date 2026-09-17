@@ -67,9 +67,10 @@ export const CollectionSection: React.FC<CollectionSectionProps> = ({
 
           {/* Controls: Navigation Arrows + VER TUDO */}
           <div className="flex items-center gap-2 self-end sm:self-auto">
+            {/* Arrows hidden on mobile (grid layout), visible on sm+ (scroll layout) */}
             <button
               onClick={() => scroll('left')}
-              className="w-9 h-9 rounded-full border border-neutral-300 bg-white hover:bg-neutral-100 hover:border-black flex items-center justify-center text-neutral-800 transition-colors shadow-xs"
+              className="hidden sm:flex w-9 h-9 rounded-full border border-neutral-300 bg-white hover:bg-neutral-100 hover:border-black items-center justify-center text-neutral-800 transition-colors shadow-xs"
               aria-label="Sneakers anteriores"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -77,7 +78,7 @@ export const CollectionSection: React.FC<CollectionSectionProps> = ({
 
             <button
               onClick={() => scroll('right')}
-              className="w-9 h-9 rounded-full border border-neutral-300 bg-white hover:bg-neutral-100 hover:border-black flex items-center justify-center text-neutral-800 transition-colors shadow-xs"
+              className="hidden sm:flex w-9 h-9 rounded-full border border-neutral-300 bg-white hover:bg-neutral-100 hover:border-black items-center justify-center text-neutral-800 transition-colors shadow-xs"
               aria-label="Próximos sneakers"
             >
               <ChevronRight className="w-4 h-4" />
@@ -95,15 +96,18 @@ export const CollectionSection: React.FC<CollectionSectionProps> = ({
           </div>
         </div>
 
-        {/* Product Cards Row - Smooth responsive scroll / grid */}
+        {/* Product Cards — Grid on mobile, horizontal scroll on sm+ */}
         <div
           ref={scrollContainerRef}
-          className="flex gap-4 overflow-x-auto pb-4 pt-1 no-scrollbar snap-x snap-mandatory scroll-smooth"
+          className="
+            grid grid-cols-2 gap-3
+            sm:flex sm:gap-4 sm:overflow-x-auto sm:pb-4 sm:pt-1 sm:no-scrollbar sm:snap-x sm:snap-mandatory sm:scroll-smooth
+          "
         >
           {products.map((sneaker) => (
             <div 
               key={sneaker.id}
-              className="w-[240px] sm:w-[255px] md:w-[260px] lg:w-[calc(20%-13px)] flex-shrink-0 snap-start"
+              className="sm:w-[255px] md:w-[260px] lg:w-[calc(20%-13px)] sm:flex-shrink-0 sm:snap-start"
             >
               <ProductCard
                 product={sneaker}
