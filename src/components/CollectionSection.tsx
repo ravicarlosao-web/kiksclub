@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
+import React from 'react';
+import { ArrowRight } from 'lucide-react';
 import { Sneaker } from '../types';
 import { ProductCard } from './ProductCard';
 
@@ -26,14 +26,6 @@ export const CollectionSection: React.FC<CollectionSectionProps> = ({
   onQuickView,
   onViewAll,
 }) => {
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollContainerRef.current) {
-      const offset = direction === 'left' ? -280 : 280;
-      scrollContainerRef.current.scrollBy({ left: offset, behavior: 'smooth' });
-    }
-  };
 
   return (
     <section 
@@ -65,25 +57,8 @@ export const CollectionSection: React.FC<CollectionSectionProps> = ({
             <div className="w-10 h-1 bg-[#FFDD00] mt-2 rounded-full" />
           </div>
 
-          {/* Controls: Navigation Arrows + VER TUDO */}
+          {/* Controls: VER TUDO */}
           <div className="flex items-center gap-2 self-end sm:self-auto">
-            {/* Arrows hidden on mobile (grid layout), visible on sm+ (scroll layout) */}
-            <button
-              onClick={() => scroll('left')}
-              className="hidden sm:flex w-9 h-9 rounded-full border border-neutral-300 bg-white hover:bg-neutral-100 hover:border-black items-center justify-center text-neutral-800 transition-colors shadow-xs"
-              aria-label="Sneakers anteriores"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={() => scroll('right')}
-              className="hidden sm:flex w-9 h-9 rounded-full border border-neutral-300 bg-white hover:bg-neutral-100 hover:border-black items-center justify-center text-neutral-800 transition-colors shadow-xs"
-              aria-label="Próximos sneakers"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-
             {onViewAll && (
               <button
                 onClick={onViewAll}
@@ -96,18 +71,13 @@ export const CollectionSection: React.FC<CollectionSectionProps> = ({
           </div>
         </div>
 
-        {/* Product Cards — Grid on mobile, horizontal scroll on sm+ */}
+        {/* Product Cards — Grid layout em todos os tamanhos */}
         <div
-          ref={scrollContainerRef}
-          className="
-            grid grid-cols-2 gap-3
-            sm:flex sm:gap-4 sm:overflow-x-auto sm:pb-4 sm:pt-1 sm:no-scrollbar sm:snap-x sm:snap-mandatory sm:scroll-smooth
-          "
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4"
         >
           {products.map((sneaker) => (
             <div 
               key={sneaker.id}
-              className="sm:w-[255px] md:w-[260px] lg:w-[calc(20%-13px)] sm:flex-shrink-0 sm:snap-start"
             >
               <ProductCard
                 product={sneaker}
@@ -118,6 +88,7 @@ export const CollectionSection: React.FC<CollectionSectionProps> = ({
             </div>
           ))}
         </div>
+
 
       </div>
     </section>
