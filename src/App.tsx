@@ -26,6 +26,7 @@ import { ProductCard } from './components/ProductCard';
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
 import { PoliciesPage } from './components/PoliciesPage';
 import { HelpFaqPage } from './components/HelpFaqPage';
+import { CategoryPage } from './components/CategoryPage';
 import { useSEO } from './hooks/useSEO';
 
 const getCategorySectionInfo = (catId: string, defaultName: string) => {
@@ -137,7 +138,8 @@ export default function App() {
   const [searchSort, setSearchSort] = useState<'default' | 'price-asc' | 'price-desc'>('default');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedProduct, setSelectedProduct] = useState<Sneaker | null>(null);
-  const [currentPage, setCurrentPage] = useState<'home' | 'tracking' | 'admin-login' | 'admin-dashboard' | 'privacy' | 'policies' | 'help' | 'product-detail'>(() => {
+  const [selectedCategoryPage, setSelectedCategoryPage] = useState<StoreCategory | null>(null);
+  const [currentPage, setCurrentPage] = useState<'home' | 'tracking' | 'admin-login' | 'admin-dashboard' | 'privacy' | 'policies' | 'help' | 'product-detail' | 'category'>(() => {
     const path = typeof window !== 'undefined' ? window.location.pathname.toLowerCase() : '';
     const hash = typeof window !== 'undefined' ? window.location.hash.toLowerCase() : '';
     if (path === '/admin' || hash === '#admin') {
@@ -145,6 +147,7 @@ export default function App() {
       return saved ? 'admin-dashboard' : 'admin-login';
     }
     if (path.startsWith('/produto/') || hash.startsWith('#produto/')) return 'product-detail';
+    if (path.startsWith('/categoria/')) return 'category';
     if (path === '/politicas' || path === '/policies' || hash === '#politicas') return 'policies';
     if (path === '/ajuda' || path === '/help' || path === '/faq' || hash === '#ajuda') return 'help';
     if (path === '/politica-privacidade' || path === '/privacidade') return 'privacy';
@@ -544,8 +547,16 @@ export default function App() {
 
   const handleNavigateToHome = () => {
     setSelectedProduct(null);
+    setSelectedCategoryPage(null);
     setCurrentPage('home');
     window.history.pushState({}, '', '/');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNavigateToCategoryPage = (cat: StoreCategory) => {
+    setSelectedCategoryPage(cat);
+    setCurrentPage('category');
+    window.history.pushState({}, '', `/categoria/${cat.id}`);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -597,6 +608,16 @@ export default function App() {
         }
       }
 
+      if (path.startsWith('/categoria/')) {
+        const catId = path.replace('/categoria/', '').split('/')[0];
+        const found = categories.find((c) => c.id.toLowerCase() === catId);
+        if (found) {
+          setSelectedCategoryPage(found);
+          setCurrentPage('category');
+          return;
+        }
+      }
+
       if (path === '/admin' || hash === '#admin') {
         const saved = localStorage.getItem('kicksclub_admin');
         setCurrentPage(saved ? 'admin-dashboard' : 'admin-login');
@@ -611,6 +632,7 @@ export default function App() {
       } else if (path === '/' || hash === '') {
         setCurrentPage('home');
         setSelectedProduct(null);
+        setSelectedCategoryPage(null);
       }
     };
 
@@ -620,7 +642,7 @@ export default function App() {
       window.removeEventListener('popstate', handleRouteSync);
       window.removeEventListener('hashchange', handleRouteSync);
     };
-  }, [products]);
+  }, [products, categories]);
 
   // ── Loading Screen ─────────────────────────────────────────────
   const isInitialLoading = loadingProducts || loadingCategories;
@@ -726,6 +748,19 @@ export default function App() {
             onNavigateBack={handleNavigateBack}
             onNavigateToProduct={handleNavigateToProduct}
             onOpenPolicies={handleOpenPolicies}
+          />
+        ) : currentPage === 'category' && selectedCategoryPage ? (
+          <CategoryPage
+            category={selectedCategoryPage}
+            products={products.filter((p) => {
+              if (p.department) return p.department.toLowerCase() === selectedCategoryPage.id.toLowerCase();
+              return selectedCategoryPage.id.toLowerCase() === 'tenis';
+            })}
+            allCategoryProducts={products}
+            wishlistIds={wishlistIds}
+            onToggleWishlist={handleToggleWishlist}
+            onQuickView={handleNavigateToProduct}
+            onNavigateBack={handleNavigateToHome}
           />
         ) : (
           <>
@@ -860,11 +895,8 @@ export default function App() {
                     wishlistIds={wishlistIds}
                     onToggleWishlist={handleToggleWishlist}
                     onQuickView={(p) => handleNavigateToProduct(p)}
-                    onViewAll={() => {
-                      setSelectedCategory(cat.id);
-                      const el = document.getElementById(`section-${cat.id}`);
-                      if (el) el.scrollIntoView({ behavior: 'smooth' });
-                    }}
+                    maxVisible={8}
+                    onViewAll={() => handleNavigateToCategoryPage(cat)}
                   />
                 );
               })}
@@ -896,10 +928,7 @@ export default function App() {
               wishlistIds={wishlistIds}
               onToggleWishlist={handleToggleWishlist}
               onQuickView={(p) => handleNavigateToProduct(p)}
-              onViewAll={() => {
-                const el = document.getElementById('section-hype');
-                el?.scrollIntoView({ behavior: 'smooth' });
-              }}
+              maxVisible={8}
             />
 
             {/* 9. Value Props Banner */}
