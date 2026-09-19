@@ -105,7 +105,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'GET') {
     try {
       const db = getDb();
-      const { department, category, search, featured, brand, brandId, limit = '234', offset = '0' } = req.query as Record<string, string>;
+      const { department, category, search, featured, brand, brandId, limit = '2000', offset = '0' } = req.query as Record<string, string>;
 
       let sql = `
         SELECT p.*, b.name as brand_name, b.logo_url as brand_logo

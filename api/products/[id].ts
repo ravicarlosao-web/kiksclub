@@ -194,9 +194,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     try {
       const db = getDb();
-      await db.execute({ sql: 'DELETE FROM products WHERE id = ?', args: [id] });
+
+      // Verificar se o produto existe antes de eliminar
+      const check = await db.execute({ sql: 'SELECT id FROM products WHERE id = ?', args: [id] });
+      if (check.rows.length === 0) {
+        setCors(res);
+        return jsonError(res, 404, 'Produto não encontrado');
+      }
+
+      const result = await db.execute({ sql: 'DELETE FROM products WHERE id = ?', args: [id] });
+      if (result.rowsAffected === 0) {
+        return jsonError(res, 404, 'Produto não encontrado ou já eliminado');
+      }
+
       setCors(res);
-      res.status(200).json({ message: 'Produto eliminado com sucesso' });
+      res.status(200).json({ message: 'Produto eliminado com sucesso', id });
     } catch (err: any) {
       console.error('[DELETE /api/products/:id]', err);
       jsonError(res, 500, `Erro ao eliminar produto: ${err.message}`);

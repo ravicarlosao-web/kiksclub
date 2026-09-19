@@ -48,7 +48,7 @@ interface AdminDashboardPageProps {
   brands?: Brand[];
   onAddProduct: (product: Sneaker) => void;
   onUpdateProduct: (product: Sneaker) => void;
-  onDeleteProduct: (productId: string) => void;
+  onDeleteProduct: (productId: string) => Promise<void>;
   onAddCategory: (category: StoreCategory) => void;
   onUpdateCategory: (category: StoreCategory) => void;
   onDeleteCategory: (categoryId: string) => void;
@@ -101,6 +101,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   // Product Modals
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState<Sneaker | null>(null);
+
+  // Product Delete state
+  const [productToDelete, setProductToDelete] = useState<Sneaker | null>(null);
+  const [isDeletingProduct, setIsDeletingProduct] = useState(false);
+  const [deleteProductError, setDeleteProductError] = useState<string | null>(null);
 
   // Category Modals
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
@@ -975,9 +980,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                             </button>
                             <button
                               onClick={() => {
-                                if (window.confirm(`Tens a certeza que desejas remover o produto "${product.name}" do catálogo?`)) {
-                                  onDeleteProduct(product.id);
-                                }
+                                setDeleteProductError(null);
+                                setProductToDelete(product);
                               }}
                               className="p-2 rounded-lg bg-neutral-900 hover:bg-red-900 text-neutral-400 hover:text-red-200 transition-colors"
                               title="Remover Produto"
@@ -1443,6 +1447,107 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         onDeleteOrder={onDeleteOrder}
         onAnonymizeCustomer={onAnonymizeCustomer}
       />
+
+      {/* ── Delete Product Confirmation Modal ─────────────────────── */}
+      {productToDelete && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="relative bg-[#141414] border border-neutral-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center gap-3 px-6 pt-6 pb-4 border-b border-neutral-800">
+              <div className="w-10 h-10 rounded-xl bg-red-950 border border-red-900/60 flex items-center justify-center flex-shrink-0">
+                <Trash2 className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-white">Eliminar Produto</h2>
+                <p className="text-xs text-neutral-500">Esta ação não pode ser revertida</p>
+              </div>
+              <button
+                onClick={() => {
+                  if (!isDeletingProduct) {
+                    setProductToDelete(null);
+                    setDeleteProductError(null);
+                  }
+                }}
+                className="ml-auto p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-neutral-800 transition-colors"
+                aria-label="Fechar"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-5 space-y-4">
+              <p className="text-sm text-neutral-300">
+                Tens a certeza que desejas eliminar permanentemente o produto:
+              </p>
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-neutral-900 border border-neutral-800">
+                {productToDelete.image && (
+                  <img
+                    src={productToDelete.image}
+                    alt={productToDelete.name}
+                    className="w-12 h-12 rounded-lg object-cover flex-shrink-0 bg-neutral-800"
+                  />
+                )}
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-white truncate">{productToDelete.name}</p>
+                  <p className="text-xs text-neutral-400">{productToDelete.brand} · ID: {productToDelete.id.slice(0, 14)}…</p>
+                </div>
+              </div>
+
+              {deleteProductError && (
+                <div className="flex items-start gap-2 p-3 rounded-xl bg-red-950/50 border border-red-900/60">
+                  <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-red-300">{deleteProductError}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 px-6 pb-6">
+              <button
+                onClick={() => {
+                  setProductToDelete(null);
+                  setDeleteProductError(null);
+                }}
+                disabled={isDeletingProduct}
+                className="px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-300 hover:text-white text-sm font-bold transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  if (!productToDelete || isDeletingProduct) return;
+                  setIsDeletingProduct(true);
+                  setDeleteProductError(null);
+                  try {
+                    await onDeleteProduct(productToDelete.id);
+                    setProductToDelete(null);
+                  } catch (err: unknown) {
+                    const msg = err instanceof Error ? err.message : 'Erro ao eliminar produto';
+                    setDeleteProductError(msg);
+                  } finally {
+                    setIsDeletingProduct(false);
+                  }
+                }}
+                disabled={isDeletingProduct}
+                className="px-4 py-2 rounded-xl bg-red-700 hover:bg-red-600 text-white text-sm font-bold flex items-center gap-2 transition-colors disabled:opacity-60"
+              >
+                {isDeletingProduct ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>A eliminar…</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Eliminar Produto</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

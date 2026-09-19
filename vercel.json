@@ -3,6 +3,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/api/products/:id",
+      "destination": "/api/products/:id"
+    },
+    {
       "source": "/api/categories/:id",
       "destination": "/api/categories?id=:id"
     },
