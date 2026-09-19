@@ -11,6 +11,7 @@ export interface StoreCategory {
   bannerTag?: string;
   featured?: boolean;
   isActive?: boolean;
+  sortOrder?: number; // Ordem de apresentação na homepage (menor = primeiro)
 }
 
 export interface Brand {

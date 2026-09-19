@@ -29,12 +29,14 @@ import {
   Menu,
   ChevronRight,
   Layers,
-  Ticket
+  Ticket,
+  ArrowUpDown
 } from 'lucide-react';
 import { Sneaker, Order, OrderStatus, AdminUser, StoreCategory, Brand } from '../../types';
 import { AddEditProductModal } from './AddEditProductModal';
 import { OrderDetailsModal } from './OrderDetailsModal';
 import { CategoryManagementTab } from './CategoryManagementTab';
+import { CategoryOrderManagementTab } from './CategoryOrderManagementTab';
 import { AddEditCategoryModal } from './AddEditCategoryModal';
 import { BrandsManagementTab } from './BrandsManagementTab';
 import { CouponsManagementTab } from './CouponsManagementTab';
@@ -52,6 +54,7 @@ interface AdminDashboardPageProps {
   onAddCategory: (category: StoreCategory) => void;
   onUpdateCategory: (category: StoreCategory) => void;
   onDeleteCategory: (categoryId: string) => void;
+  onReorderCategories: (orderedIds: string[]) => Promise<void>;
   onResetCategories: () => void;
   onAddBrand?: (brand: Omit<Brand, 'id' | 'createdAt'>) => Promise<Brand | null>;
   onUpdateBrand?: (id: string, updates: Partial<Brand>) => Promise<Brand | null>;
@@ -67,7 +70,7 @@ interface AdminDashboardPageProps {
   onAnonymizeCustomer?: (orderId: string) => void;
 }
 
-type TabType = 'overview' | 'products' | 'categories' | 'brands' | 'coupons' | 'orders' | 'settings';
+type TabType = 'overview' | 'products' | 'categories' | 'category-order' | 'brands' | 'coupons' | 'orders' | 'settings';
 
 export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   adminUser,
@@ -81,6 +84,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   onAddCategory,
   onUpdateCategory,
   onDeleteCategory,
+  onReorderCategories,
   onResetCategories,
   onAddBrand,
   onUpdateBrand,
@@ -404,6 +408,31 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               </span>
             </button>
 
+            {/* 3.1 Ordem na Homepage */}
+            <button
+              onClick={() => {
+                setCurrentTab('category-order');
+                setIsMobileSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${
+                currentTab === 'category-order'
+                  ? 'bg-[#FFDD00] text-black font-black shadow-md shadow-[#FFDD00]/10'
+                  : 'text-neutral-300 hover:text-white hover:bg-neutral-900/90'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <ArrowUpDown className={`w-4 h-4 ${currentTab === 'category-order' ? 'text-black' : 'text-[#FFDD00]'}`} />
+                <span>Ordem na Homepage</span>
+              </div>
+              <span className={`px-2 py-0.5 rounded-full text-[9px] font-black font-condensed uppercase tracking-wider ${
+                currentTab === 'category-order'
+                  ? 'bg-black text-[#FFDD00]'
+                  : 'bg-[#FFDD00]/10 text-[#FFDD00] border border-[#FFDD00]/30'
+              }`}>
+                Controlo
+              </span>
+            </button>
+
             {/* 3.1 Gerir Marcas */}
             <button
               onClick={() => {
@@ -538,6 +567,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               {currentTab === 'overview' && 'VISÃO GERAL DO NEGÓCIO'}
               {currentTab === 'products' && `CATÁLOGO DE PRODUTOS (${products.length})`}
               {currentTab === 'categories' && `GESTÃO DE CATEGORIAS DA LOJA (${categories.length})`}
+              {currentTab === 'category-order' && `ORDEM DAS CATEGORIAS NA HOMEPAGE (${categories.length})`}
               {currentTab === 'orders' && `GESTÃO DE ENCOMENDAS (${orders.length})`}
               {currentTab === 'settings' && 'CONFIGURAÇÕES DA PLATAFORMA'}
             </h1>
@@ -1033,11 +1063,25 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 setIsCategoryModalOpen(true);
               }}
               onDeleteCategory={onDeleteCategory}
+              onReorderCategories={onReorderCategories}
               onResetCategories={onResetCategories}
               onFilterCategoryProducts={(catId) => {
                 setProductDepartmentFilter(catId);
                 setCurrentTab('products');
               }}
+              onGoToOrderTab={() => setCurrentTab('category-order')}
+            />
+          </div>
+        )}
+
+        {/* TAB: ORDEM DAS CATEGORIAS NA HOMEPAGE */}
+        {currentTab === 'category-order' && (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <CategoryOrderManagementTab
+              categories={categories}
+              products={products}
+              onReorderCategories={onReorderCategories}
+              onNavigateHome={onNavigateHome}
             />
           </div>
         )}

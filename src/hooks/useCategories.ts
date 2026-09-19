@@ -81,6 +81,38 @@ export function useCategories() {
     setCategories((prev) => prev.filter((c) => c.id !== id));
   }, []);
 
+  // Reordenar categorias (actualiza sort_order na BD)
+  const reorderCategories = useCallback(async (orderedIds: string[]): Promise<void> => {
+    // Optimistic update: reordenar localmente já
+    setCategories((prev) => {
+      const ordered = orderedIds
+        .map((id, index) => {
+          const cat = prev.find((c) => c.id === id);
+          return cat ? { ...cat, sortOrder: index + 1 } : null;
+        })
+        .filter(Boolean) as typeof prev;
+      // Categorias que não estão na lista ficam no fim
+      const rest = prev.filter((c) => !orderedIds.includes(c.id));
+      return [...ordered, ...rest];
+    });
+
+    const res = await fetch(API, {
+      method: 'PATCH',
+      headers: authHeader(),
+      credentials: 'include',
+      body: JSON.stringify({ orderedIds }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Erro ao reordenar categorias' }));
+      throw new Error(err.error || 'Erro ao reordenar categorias');
+    }
+    // Sincronizar com a ordem confirmada pelo servidor
+    const updated: StoreCategory[] = await res.json();
+    if (Array.isArray(updated) && updated.length > 0) {
+      setCategories(updated);
+    }
+  }, []);
+
   return {
     categories,
     loading,
@@ -89,5 +121,6 @@ export function useCategories() {
     createCategory,
     updateCategory,
     deleteCategory,
+    reorderCategories,
   };
 }

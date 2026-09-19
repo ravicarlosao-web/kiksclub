@@ -96,7 +96,10 @@ export const DepartmentCategoryNav: React.FC<DepartmentCategoryNavProps> = ({
 
         {/* Categories Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {categories.map((cat) => {
+          {[...categories]
+            .filter((cat) => cat.isActive !== false)
+            .sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999))
+            .map((cat) => {
             const count = getProductCount(cat.id, cat.slug);
             const isActive = activeCategory === cat.id || activeCategory === cat.slug;
 

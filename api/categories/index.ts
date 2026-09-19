@@ -6,7 +6,7 @@ function setCors(res: VercelResponse, req?: VercelRequest): void {
   const origin = req?.headers?.origin || '*';
   res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
 
@@ -91,8 +91,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const rawId = req.query.id;
   const id = Array.isArray(rawId) ? rawId[0] : rawId;
 
-  // ── Se ID for fornecido: operações sobre categoria específica ──
-  if (id) {
+  // ── Se ID for fornecido e não for acção especial: operações sobre categoria específica ──
+  if (id && id !== 'reorder') {
     // GET /api/categories/:id
     if (req.method === 'GET') {
       try {
@@ -165,14 +165,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // ── Operações sobre a colecção (/api/categories) ───────────────
-  // GET /api/categories
+  // ── GET /api/categories ────────────────────────────────────────
   if (req.method === 'GET') {
     try {
       const db = getDb();
       const { activeOnly } = req.query as { activeOnly?: string };
       let sql = 'SELECT * FROM categories';
       if (activeOnly === 'true') sql += ' WHERE is_active = 1';
-      sql += ' ORDER BY sort_order ASC, name ASC';
+      sql += ' ORDER BY COALESCE(sort_order, 999) ASC, name ASC';
 
       const result = await db.execute(sql);
       setCors(res);
@@ -180,6 +180,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch (err: any) {
       console.error('[GET /api/categories]', err);
       jsonError(res, 500, `Erro ao carregar categorias: ${err.message}`);
+    }
+    return;
+  }
+
+  // ── PATCH/POST /api/categories/reorder ─────────────────────────────
+  // Body: { orderedIds: string[] }  ex: ["tenis","roupa","acessorios"]
+  if (req.method === 'PATCH' || (req.method === 'POST' && req.body?.orderedIds)) {
+    const admin = requireAuth(req, res);
+    if (!admin) return;
+
+    try {
+      const { orderedIds } = req.body as { orderedIds?: string[] };
+      if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
+        return jsonError(res, 400, 'Campo obrigatório em falta: orderedIds (array de IDs)');
+      }
+
+      const db = getDb();
+
+      // Actualizar sort_order para cada ID em lote
+      const statements = orderedIds.map((catId: string, index: number) => ({
+        sql: 'UPDATE categories SET sort_order = ? WHERE id = ?',
+        args: [index + 1, catId] as [number, string],
+      }));
+
+      await db.batch(statements, 'write');
+
+      // Devolver categorias já na nova ordem
+      const result = await db.execute('SELECT * FROM categories ORDER BY COALESCE(sort_order, 999) ASC, name ASC');
+      setCors(res);
+      res.status(200).json(result.rows.map(rowToCategory));
+    } catch (err: any) {
+      console.error('[PATCH /api/categories/reorder]', err);
+      jsonError(res, 500, `Erro ao reordenar categorias: ${err.message}`);
     }
     return;
   }

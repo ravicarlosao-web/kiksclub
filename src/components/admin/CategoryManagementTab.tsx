@@ -18,7 +18,8 @@ import {
   ArrowRight,
   RefreshCw,
   FolderCheck,
-  ShoppingBag
+  ShoppingBag,
+  ArrowUpDown
 } from 'lucide-react';
 import { StoreCategory, Sneaker } from '../../types';
 
@@ -28,8 +29,10 @@ interface CategoryManagementTabProps {
   onAddCategory: () => void;
   onEditCategory: (category: StoreCategory) => void;
   onDeleteCategory: (categoryId: string) => void;
+  onReorderCategories?: (orderedIds: string[]) => Promise<void>;
   onResetCategories: () => void;
   onFilterCategoryProducts: (categoryId: string) => void;
+  onGoToOrderTab?: () => void;
 }
 
 export const CategoryManagementTab: React.FC<CategoryManagementTabProps> = ({
@@ -38,8 +41,10 @@ export const CategoryManagementTab: React.FC<CategoryManagementTabProps> = ({
   onAddCategory,
   onEditCategory,
   onDeleteCategory,
+  onReorderCategories,
   onResetCategories,
   onFilterCategoryProducts,
+  onGoToOrderTab,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -107,6 +112,17 @@ export const CategoryManagementTab: React.FC<CategoryManagementTabProps> = ({
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            {onGoToOrderTab && (
+              <button
+                onClick={onGoToOrderTab}
+                className="px-3.5 py-2 bg-[#FFDD00]/10 hover:bg-[#FFDD00]/20 border border-[#FFDD00]/30 hover:border-[#FFDD00]/60 text-[#FFDD00] rounded-xl text-xs font-black uppercase font-condensed transition-all flex items-center gap-1.5 shadow-sm"
+                title="Aceder ao controlo de ordem das secções na Homepage"
+              >
+                <ArrowUpDown className="w-3.5 h-3.5" />
+                <span>Ordem na Homepage</span>
+              </button>
+            )}
+
             <button
               onClick={onResetCategories}
               className="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"

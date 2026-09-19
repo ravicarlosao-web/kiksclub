@@ -11,7 +11,8 @@ export const INITIAL_CATEGORIES: StoreCategory[] = [
     bannerImage: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=1200&auto=format&fit=crop&q=80',
     bannerTag: 'CALÇADO EXCLUSIVO',
     featured: true,
-    isActive: true
+    isActive: true,
+    sortOrder: 1,
   },
   {
     id: 'roupa',
@@ -23,7 +24,8 @@ export const INITIAL_CATEGORIES: StoreCategory[] = [
     bannerImage: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=1200&auto=format&fit=crop&q=80',
     bannerTag: 'STREETWEAR DROP',
     featured: true,
-    isActive: true
+    isActive: true,
+    sortOrder: 2,
   },
   {
     id: 'acessorios',
@@ -35,7 +37,8 @@ export const INITIAL_CATEGORIES: StoreCategory[] = [
     bannerImage: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=1200&auto=format&fit=crop&q=80',
     bannerTag: 'ACESSÓRIOS & LUXO',
     featured: true,
-    isActive: true
+    isActive: true,
+    sortOrder: 3,
   },
   {
     id: 'relogios',
@@ -47,7 +50,8 @@ export const INITIAL_CATEGORIES: StoreCategory[] = [
     bannerImage: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=1200&auto=format&fit=crop&q=80',
     bannerTag: 'ALTA RELOJOARIA',
     featured: true,
-    isActive: true
+    isActive: true,
+    sortOrder: 4,
   },
   {
     id: 'eletronicos',
@@ -59,6 +63,7 @@ export const INITIAL_CATEGORIES: StoreCategory[] = [
     bannerImage: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1200&auto=format&fit=crop&q=80',
     bannerTag: 'TECH & AUDIO GEAR',
     featured: true,
-    isActive: true
+    isActive: true,
+    sortOrder: 5,
   }
 ];

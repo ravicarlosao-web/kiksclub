@@ -86,7 +86,10 @@ export const Footer: React.FC<FooterProps> = ({
                 </button>
               </li>
               {categories && categories.length > 0 ? (
-                categories.map((cat) => (
+                [...categories]
+                  .filter((cat) => cat.isActive !== false)
+                  .sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999))
+                  .map((cat) => (
                   <li key={cat.id}>
                     <button
                       onClick={() => {

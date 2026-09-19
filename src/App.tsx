@@ -82,6 +82,7 @@ export default function App() {
     createCategory,
     updateCategory,
     deleteCategory,
+    reorderCategories,
   } = useCategories();
 
   const {
@@ -334,6 +335,10 @@ export default function App() {
 
   const handleDeleteProduct = async (productId: string) => {
     await deleteProduct(productId);
+  };
+
+  const handleReorderCategories = async (orderedIds: string[]) => {
+    await reorderCategories(orderedIds);
   };
 
   // ── Order Management (Admin) ───────────────────────────────────
@@ -674,6 +679,7 @@ export default function App() {
         onAddCategory={handleAddCategory}
         onUpdateCategory={handleUpdateCategory}
         onDeleteCategory={handleDeleteCategory}
+        onReorderCategories={handleReorderCategories}
         onResetCategories={() => {}}
         onAddBrand={createBrand}
         onUpdateBrand={updateBrand}
@@ -876,8 +882,9 @@ export default function App() {
             <TrustTicker />
 
             {/* 5. Secções por Categoria */}
-            {categories
+            {[...categories]
               .filter((cat) => cat.isActive !== false)
+              .sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999))
               .map((cat) => {
                 const catProducts = products.filter((p) => {
                   if (p.department) return p.department.toLowerCase() === cat.id.toLowerCase();
