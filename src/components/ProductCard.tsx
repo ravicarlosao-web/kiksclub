@@ -29,7 +29,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   return (
     <article 
-      className="group relative bg-white rounded-2xl p-2.5 sm:p-4 flex flex-col justify-between border border-neutral-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_25px_rgba(0,0,0,0.09)] transition-all duration-300 select-none h-full overflow-hidden"
+      className="group relative bg-white rounded-2xl p-3 sm:p-5 flex flex-col justify-between border border-neutral-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_25px_rgba(0,0,0,0.09)] transition-all duration-300 select-none h-full overflow-hidden"
       itemScope 
       itemType="https://schema.org/Product"
     >
@@ -74,7 +74,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {/* Sneaker Image Container */}
       <div 
         onClick={() => onQuickView(product)}
-        className="relative w-full h-28 sm:h-44 flex items-center justify-center cursor-pointer my-1.5 sm:my-2 overflow-hidden"
+        className="relative w-full h-36 sm:h-52 flex items-center justify-center cursor-pointer my-2 sm:my-3 overflow-hidden"
       >
         <img
           src={activeImage}
@@ -144,7 +144,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {/* Product Title: Deep Black */}
           <h3 
             onClick={() => onQuickView(product)}
-            className="text-[11px] sm:text-[14px] font-extrabold uppercase text-[#0B1A30] tracking-tight leading-snug line-clamp-2 min-h-[32px] sm:min-h-[38px] cursor-pointer hover:text-[#CA8A04] transition-colors"
+            className="text-xs sm:text-[15px] font-extrabold uppercase text-[#0B1A30] tracking-tight leading-snug line-clamp-2 min-h-[34px] sm:min-h-[44px] cursor-pointer hover:text-[#CA8A04] transition-colors mt-1"
             title={product.name}
           >
             {product.name}
@@ -154,7 +154,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Price & Action Area with Offer Schema */}
         <div 
           onClick={() => onQuickView(product)}
-          className="flex items-center justify-between pt-2 sm:pt-3 mt-auto cursor-pointer border-t border-neutral-100"
+          className="flex items-center justify-between pt-3 sm:pt-4 mt-auto cursor-pointer border-t border-neutral-100 gap-2"
           itemProp="offers" 
           itemScope 
           itemType="https://schema.org/Offer"
@@ -166,11 +166,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <meta itemProp="priceValidUntil" content="2026-12-31" />
 
           {/* Price Pair */}
-          <div className="flex flex-col sm:flex-row sm:items-baseline min-w-0">
-            <span className="text-sm sm:text-[17px] font-black text-[#0B1A30] tracking-tight font-condensed leading-none">
+          <div className="flex flex-col min-w-0">
+            <span className="text-sm sm:text-lg font-black text-[#0B1A30] tracking-tight font-condensed leading-none">
               {product.price.toFixed(2).replace('.', ',')}€
             </span>
-            <span className="text-[10px] sm:text-[13px] font-medium text-[#8292A2] line-through sm:ml-2 leading-none mt-0.5 sm:mt-0">
+            <span className="text-[10px] sm:text-xs font-medium text-[#8292A2] line-through leading-none mt-1">
               {product.originalPrice.toFixed(2).replace('.', ',')}€
             </span>
           </div>
